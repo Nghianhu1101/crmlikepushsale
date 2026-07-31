@@ -47,60 +47,60 @@ class Activity extends AbstractEntity
             [
                 'id' => 'title',
                 'type' => 'text',
-                'name' => 'Title',
+                'name' => 'Tiêu đề',
                 'lookup_type' => null,
                 'options' => collect(),
             ], [
                 'id' => 'type',
                 'type' => 'multiselect',
-                'name' => 'Type',
+                'name' => 'Loại',
                 'lookup_type' => null,
                 'options' => collect([
                     (object) [
                         'id' => 'note',
-                        'name' => 'Note',
+                        'name' => 'Ghi chú',
                     ], (object) [
                         'id' => 'call',
-                        'name' => 'Call',
+                        'name' => 'Cuộc gọi',
                     ], (object) [
                         'id' => 'meeting',
-                        'name' => 'Meeting',
+                        'name' => 'Cuộc họp',
                     ], (object) [
                         'id' => 'lunch',
-                        'name' => 'Lunch',
+                        'name' => 'Bữa trưa',
                     ], (object) [
                         'id' => 'file',
-                        'name' => 'File',
+                        'name' => 'Tệp',
                     ],
                 ]),
             ], [
                 'id' => 'location',
                 'type' => 'text',
-                'name' => 'Location',
+                'name' => 'Địa điểm',
                 'lookup_type' => null,
                 'options' => collect(),
             ], [
                 'id' => 'comment',
                 'type' => 'textarea',
-                'name' => 'Comment',
+                'name' => 'Nội dung',
                 'lookup_type' => null,
                 'options' => collect(),
             ], [
                 'id' => 'schedule_from',
                 'type' => 'datetime',
-                'name' => 'Schedule From',
+                'name' => 'Bắt đầu lúc',
                 'lookup_type' => null,
                 'options' => collect(),
             ], [
                 'id' => 'schedule_to',
                 'type' => 'datetime',
-                'name' => 'Schedule To',
+                'name' => 'Kết thúc lúc',
                 'lookup_type' => null,
                 'options' => collect(),
             ], [
                 'id' => 'user_id',
                 'type' => 'select',
-                'name' => 'User',
+                'name' => 'Người phụ trách',
                 'lookup_type' => 'users',
                 'options' => $this->attributeRepository->getLookUpOptions('users'),
             ],
@@ -117,7 +117,7 @@ class Activity extends AbstractEntity
         $emailTemplates = parent::getEmailTemplatePlaceholders($entity);
 
         $emailTemplates['menu'][] = [
-            'text' => 'Participants',
+            'text' => 'Người tham gia',
             'value' => '{%activities.participants%}',
         ];
 

@@ -2,53 +2,53 @@
 
 return [
     'leads' => [
-        'name' => 'Leads',
+        'name' => 'Khách hàng tiềm năng',
         'repository' => 'Webkul\Lead\Repositories\LeadRepository',
         'label_column' => 'title',
     ],
 
     'lead_sources' => [
-        'name' => 'Lead Sources',
+        'name' => 'Nguồn khách hàng tiềm năng',
         'repository' => 'Webkul\Lead\Repositories\SourceRepository',
     ],
 
     'lead_types' => [
-        'name' => 'Lead Types',
+        'name' => 'Loại khách hàng tiềm năng',
         'repository' => 'Webkul\Lead\Repositories\TypeRepository',
     ],
 
     'lead_pipelines' => [
-        'name' => 'Lead Pipelines',
+        'name' => 'Quy trình bán hàng',
         'repository' => 'Webkul\Lead\Repositories\PipelineRepository',
     ],
 
     'lead_pipeline_stages' => [
-        'name' => 'Lead Pipeline Stages',
+        'name' => 'Giai đoạn bán hàng',
         'repository' => 'Webkul\Lead\Repositories\StageRepository',
     ],
 
     'users' => [
-        'name' => 'Sales Owners',
+        'name' => 'Nhân viên phụ trách',
         'repository' => 'Webkul\User\Repositories\UserRepository',
     ],
 
     'organizations' => [
-        'name' => 'Organizations',
+        'name' => 'Tổ chức',
         'repository' => 'Webkul\Contact\Repositories\OrganizationRepository',
     ],
 
     'persons' => [
-        'name' => 'Persons',
+        'name' => 'Người liên hệ',
         'repository' => 'Webkul\Contact\Repositories\PersonRepository',
     ],
 
     'warehouses' => [
-        'name' => 'Warehouses',
+        'name' => 'Kho hàng',
         'repository' => 'Webkul\Warehouse\Repositories\WarehouseRepository',
     ],
 
     'locations' => [
-        'name' => 'Locations',
+        'name' => 'Vị trí',
         'repository' => 'Webkul\Warehouse\Repositories\LocationRepository',
     ],
 ];

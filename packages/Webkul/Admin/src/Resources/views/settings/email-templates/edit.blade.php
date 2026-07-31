@@ -38,7 +38,7 @@
                             type="submit"
                             class="primary-button"
                         >
-                            @lang('Save Email Template')
+                            @lang('admin::app.settings.email-template.edit.save-btn')
                         </button>
 
                         {!! view_render_event('admin.settings.email_template.edit.save_button.before') !!}

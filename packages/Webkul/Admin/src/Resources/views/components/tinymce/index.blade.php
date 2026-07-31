@@ -173,13 +173,14 @@
                         selector: this.selector,
                         plugins: 'image media wordcount save fullscreen code table lists link',
                         toolbar: 'placeholders | bold italic strikethrough forecolor backcolor image alignleft aligncenter alignright alignjustify | link hr | numlist bullist outdent indent | removeformat | code | table',
+                        statusbar: false,
                         image_advtab: true,
                         directionality: 'ltr',
                         setup: (editor) => {
                             let toggleState = false;
 
                             editor.ui.registry.addMenuButton('placeholders', {
-                                text: 'Placeholders',
+                                text: 'Biến nội dung',
                                 fetch: function (callback) {
                                     const items = [
                                         @foreach($placeholders as $placeholder)

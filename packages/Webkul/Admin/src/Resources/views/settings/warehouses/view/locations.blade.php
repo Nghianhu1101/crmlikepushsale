@@ -67,7 +67,7 @@
                         <!-- Modal Header -->
                         <x-slot:header>
                             <p class="text-lg font-bold text-gray-800 dark:text-white">
-                                @lang('Add Location ')
+                                @lang('admin::app.settings.warehouses.view.locations.add-location')
                             </p>
                         </x-slot>
 

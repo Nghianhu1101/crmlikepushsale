@@ -121,7 +121,7 @@
                                 class="p-4 text-sm font-semibold text-gray-600 dark:text-gray-300"
                                 v-if="searchedResults.data.length === 0"
                             >
-                                @lang('No results found.')
+                                Không tìm thấy kết quả.
                             </div>
                         </div>
                     </template>

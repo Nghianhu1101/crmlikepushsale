@@ -112,7 +112,7 @@ return [
         'ko' => '한국어',
         'pt_BR' => 'Portuguese',
         'tr' => 'Türkçe',
-        'vi' => 'Vietnamese',
+        'vi' => 'Tiếng Việt',
     ],
 
     /*
@@ -126,7 +126,7 @@ return [
     |
      */
 
-    'fallback_locale' => 'en',
+    'fallback_locale' => 'vi',
 
     /*
     |--------------------------------------------------------------------------

@@ -593,7 +593,7 @@
                      * @return {String}
                      */
                     placeholder() {
-                        return this.submitSuccessAction.value === 'message' ? '@lang('Enter message to display')' : '@lang('Enter url to redirect')';
+                        return this.submitSuccessAction.value === 'message' ? 'Nhập thông báo sẽ hiển thị' : 'Nhập URL chuyển hướng';
                     },
 
                     /**
