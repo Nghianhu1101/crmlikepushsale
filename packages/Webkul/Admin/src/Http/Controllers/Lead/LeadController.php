@@ -32,6 +32,9 @@ use Webkul\Lead\Services\MagicAIService;
 use Webkul\Quote\Repositories\QuoteItemRepository;
 use Webkul\Quote\Repositories\QuoteRepository;
 use Webkul\Tag\Repositories\TagRepository;
+use Webkul\Telesales\Models\LeadMeta;
+use Webkul\Telesales\Models\TelesalesGroup;
+use Webkul\Telesales\Services\IncomingLeadService;
 use Webkul\User\Repositories\UserRepository;
 
 class LeadController extends Controller
@@ -57,7 +60,8 @@ class LeadController extends Controller
         protected ProductRepository $productRepository,
         protected QuoteItemRepository $quoteItemRepository,
         protected QuoteRepository $quoteRepository,
-        protected PersonRepository $personRepository
+        protected PersonRepository $personRepository,
+        protected IncomingLeadService $incomingLeadService
     ) {
         request()->request->add(['entity_type' => 'leads']);
     }
@@ -164,7 +168,11 @@ class LeadController extends Controller
             ->orderBy('sort_order', 'asc')
             ->get();
 
-        return view('admin::leads.create', compact('attributes'));
+        $sources = $this->sourceRepository->all(['id', 'name']);
+        $groups = TelesalesGroup::query()->with('group')->get();
+        $defaultSourceId = $sources->firstWhere('name', 'Nhập trực tiếp')?->id;
+
+        return view('admin::leads.create', compact('sources', 'groups', 'defaultSourceId'));
     }
 
     /**
@@ -178,7 +186,54 @@ class LeadController extends Controller
 
         $data['status'] = 1;
 
-        if (request()->has('quick_add') && empty($data['user_id'])) {
+        if (! request()->has('quick_add')) {
+            $result = $this->incomingLeadService->create([
+                'phone' => data_get($data, 'person.contact_numbers.0.value'),
+                'name' => data_get($data, 'person.name'),
+                'products' => $data['products'] ?? [],
+                'product' => collect($data['products'] ?? [])->first()['name'] ?? null,
+                'source_id' => $data['lead_source_id'] ?? null,
+                'campaign' => $data['campaign'] ?? null,
+                'message' => $data['description'] ?? null,
+                'group_id' => $data['group_id'] ?? null,
+            ], auth()->guard('user')->id());
+
+            if ($result['duplicate']) {
+                if ($request->ajax()) {
+                    return response()->json([
+                        'duplicate' => true,
+                        'message' => 'Số điện thoại đã tồn tại.',
+                        'lead_id' => $result['lead']?->id,
+                        'person_id' => $result['person_id'],
+                        'owner' => $result['owner'],
+                        'stage' => $result['stage'],
+                        'last_data_at' => $result['last_data_at'],
+                        'redirect_url' => $result['profile_url'],
+                    ], 409);
+                }
+
+                return redirect()
+                    ->to($result['profile_url'])
+                    ->with('warning', sprintf(
+                        'Số điện thoại đã tồn tại. Sale: %s · Trạng thái: %s · Cập nhật: %s',
+                        $result['owner'] ?: 'Chưa phân bổ',
+                        $result['stage'] ?: 'Chưa có',
+                        $result['last_data_at'] ?: 'Chưa có'
+                    ));
+            }
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'message' => 'Data đã được tạo.',
+                    'data' => new LeadResource($result['lead']),
+                    'warning' => $result['warning'],
+                ], 201);
+            }
+
+            return redirect()
+                ->route('admin.leads.view', $result['lead']->id)
+                ->with($result['warning'] ? 'warning' : 'success', $result['warning'] ?: 'Data đã được tạo và phân sale.');
+        } elseif (empty($data['user_id'])) {
             $data['user_id'] = auth()->guard('user')->user()->id;
         }
 
@@ -195,7 +250,9 @@ class LeadController extends Controller
                 $pipeline = $this->pipelineRepository->findOrFail($data['lead_pipeline_id']);
             }
 
-            $stage = $pipeline->stages()->first();
+            $stage = $pipeline->stages()
+                ->where('code', 'new')
+                ->first() ?: $pipeline->stages()->first();
 
             $data['lead_pipeline_stage_id'] = $stage->id;
         }
@@ -258,6 +315,15 @@ class LeadController extends Controller
             $userIds
             && ! in_array($lead->user_id, $userIds)
         ) {
+            $createdByCurrentUser = LeadMeta::query()
+                ->where('lead_id', $lead->id)
+                ->where('created_by', auth()->guard('user')->id())
+                ->exists();
+
+            if ($createdByCurrentUser) {
+                return view('telesales::marketing-lead-summary', compact('lead'));
+            }
+
             return redirect()->route('admin.leads.index');
         }
 

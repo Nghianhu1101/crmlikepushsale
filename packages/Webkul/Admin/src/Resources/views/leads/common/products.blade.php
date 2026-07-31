@@ -181,12 +181,6 @@
             },
 
 
-            created() {
-                if (! this.data) {
-                    this.addProduct();
-                }
-            },
-
             methods: {
                 addProduct() {
                     this.products.push({

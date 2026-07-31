@@ -53,6 +53,7 @@ class Person extends Model implements PersonContract
         'name',
         'emails',
         'contact_numbers',
+        'normalized_phone',
         'job_title',
         'user_id',
         'organization_id',

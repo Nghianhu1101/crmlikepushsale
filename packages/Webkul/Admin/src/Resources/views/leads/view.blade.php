@@ -102,6 +102,8 @@
 
         <!-- Right Panel -->
         <div class="flex w-full flex-col gap-4 rounded-lg">
+            @include('telesales::lead-panel', ['lead' => $lead])
+
             <!-- Stages Navigation -->
             @include ('admin::leads.view.stages')
 

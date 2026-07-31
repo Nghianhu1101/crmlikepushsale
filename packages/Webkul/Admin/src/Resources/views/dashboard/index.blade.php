@@ -20,6 +20,10 @@
         <!-- Actions -->
         {!! view_render_event('admin.dashboard.index.header.right.before') !!}
 
+        <a href="{{ route('admin.telesales.rankings.index') }}" class="primary-button">
+            Bảng xếp hạng
+        </a>
+
         <v-dashboard-filters>
             <!-- Shimmer -->
             <div class="flex gap-1.5">

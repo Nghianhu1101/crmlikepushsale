@@ -1,11 +1,10 @@
 <x-admin::layouts>
     <x-slot:title>
-        @lang('admin::app.leads.create.title')
+        Tạo Lead telesale
     </x-slot>
 
     {!! view_render_event('admin.leads.create.form.before') !!}
 
-    <!-- Create Lead Form -->
     <x-admin::form :action="route('admin.leads.store')">
         <div class="flex flex-col gap-4">
             <div class="scroll-reactive-sticky sticky top-[60px] z-[1000] flex items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
@@ -13,35 +12,41 @@
                     <x-admin::breadcrumbs name="leads.create" />
 
                     <div class="text-xl font-bold dark:text-white">
-                        @lang('admin::app.leads.create.title')
+                        Tạo Lead telesale
                     </div>
                 </div>
 
-                {!! view_render_event('admin.leads.create.save_button.before') !!}
-
-                <div class="flex items-center gap-x-2.5">
-                    <!-- Save button for person -->
-                    <div class="flex items-center gap-x-2.5">
-                        {!! view_render_event('admin.leads.create.form_buttons.before') !!}
-
-                        <button
-                            type="submit"
-                            class="primary-button"
+                <div class="flex items-center gap-2">
+                    @if (bouncer()->hasPermission('leads.view'))
+                        <a
+                            href="{{ route('admin.telesales.created-leads.index') }}"
+                            class="secondary-button"
                         >
-                            @lang('admin::app.leads.create.save-btn')
-                        </button>
+                            Data tôi đã nhập
+                        </a>
+                    @endif
 
-                        {!! view_render_event('admin.leads.create.form_buttons.after') !!}
-                    </div>
+                    @if (bouncer()->hasPermission('settings.user.groups'))
+                        <a
+                            href="{{ route('admin.telesales.groups.index') }}"
+                            class="secondary-button"
+                        >
+                            Cấu hình phân data
+                        </a>
+                    @endif
+
+                    <button
+                        type="submit"
+                        class="primary-button"
+                    >
+                        Lưu
+                    </button>
                 </div>
-
-                {!! view_render_event('admin.leads.create.save_button.after') !!}
             </div>
 
             @if (request('stage_id'))
                 <input
                     type="hidden"
-                    id="lead_pipeline_stage_id"
                     name="lead_pipeline_stage_id"
                     value="{{ request('stage_id') }}"
                 />
@@ -50,191 +55,144 @@
             @if (request('pipeline_id'))
                 <input
                     type="hidden"
-                    id="lead_pipeline_id"
                     name="lead_pipeline_id"
                     value="{{ request('pipeline_id') }}"
                 />
             @endif
 
-            <!-- Lead Create Component -->
-            <v-lead-create>
-                <x-admin::shimmer.leads.datagrid />
-            </v-lead-create>
+            <div class="box-shadow rounded-lg border border-gray-300 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+                <div class="grid max-w-4xl grid-cols-2 gap-4 max-md:grid-cols-1">
+                    <x-admin::form.control-group>
+                        <x-admin::form.control-group.label class="required">
+                            Số điện thoại
+                        </x-admin::form.control-group.label>
+
+                        <x-admin::form.control-group.control
+                            type="text"
+                            name="person[contact_numbers][0][value]"
+                            id="phone"
+                            :value="old('person.contact_numbers.0.value')"
+                            rules="required|min:8|max:15"
+                            label="Số điện thoại"
+                            placeholder="Nhập số điện thoại"
+                            autocomplete="tel"
+                        />
+
+                        <input
+                            type="hidden"
+                            name="person[contact_numbers][0][label]"
+                            value="work"
+                        />
+
+                        <x-admin::form.control-group.error control-name="person[contact_numbers][0][value]" />
+                    </x-admin::form.control-group>
+
+                    <x-admin::form.control-group>
+                        <x-admin::form.control-group.label>
+                            Tên khách
+                        </x-admin::form.control-group.label>
+
+                        <x-admin::form.control-group.control
+                            type="text"
+                            name="person[name]"
+                            id="person_name"
+                            :value="old('person.name')"
+                            label="Tên khách"
+                            placeholder="Để trống sẽ tự tạo: Khách + 4 số cuối"
+                            autocomplete="name"
+                        />
+
+                        <x-admin::form.control-group.error control-name="person[name]" />
+                    </x-admin::form.control-group>
+
+                    <x-admin::form.control-group>
+                        <x-admin::form.control-group.label>
+                            Nguồn khách
+                        </x-admin::form.control-group.label>
+
+                        <x-admin::form.control-group.control
+                            type="select"
+                            name="lead_source_id"
+                            id="lead_source_id"
+                            :value="old('lead_source_id', $defaultSourceId)"
+                            label="Nguồn khách"
+                        >
+                            <option value="">Chọn nguồn khách</option>
+
+                            @foreach ($sources as $source)
+                                <option value="{{ $source->id }}">
+                                    {{ $source->name }}
+                                </option>
+                            @endforeach
+                        </x-admin::form.control-group.control>
+
+                        <x-admin::form.control-group.error control-name="lead_source_id" />
+                    </x-admin::form.control-group>
+
+                    @if (
+                        $groups->isNotEmpty()
+                        && bouncer()->hasPermission('leads.create')
+                    )
+                        <x-admin::form.control-group>
+                            <x-admin::form.control-group.label>
+                                Nhóm sale nhận data
+                            </x-admin::form.control-group.label>
+
+                            <x-admin::form.control-group.control
+                                type="select"
+                                name="group_id"
+                                id="group_id"
+                                :value="old('group_id')"
+                                label="Nhóm sale nhận data"
+                            >
+                                <option value="">Dùng nhóm mặc định</option>
+
+                                @foreach ($groups as $configuration)
+                                    <option value="{{ $configuration->group_id }}">
+                                        {{ $configuration->group->name }}
+                                    </option>
+                                @endforeach
+                            </x-admin::form.control-group.control>
+
+                            <x-admin::form.control-group.error control-name="group_id" />
+                        </x-admin::form.control-group>
+                    @endif
+
+                    <x-admin::form.control-group class="col-span-2 max-md:col-span-1">
+                        <x-admin::form.control-group.label>
+                            Nội dung khách để lại
+                        </x-admin::form.control-group.label>
+
+                        <x-admin::form.control-group.control
+                            type="textarea"
+                            name="description"
+                            id="description"
+                            rows="4"
+                            :value="old('description')"
+                            label="Nội dung khách để lại"
+                            placeholder="Ví dụ: Tôi cần tư vấn sản phẩm"
+                        />
+
+                        <x-admin::form.control-group.error control-name="description" />
+                    </x-admin::form.control-group>
+                </div>
+
+                <div class="mt-6">
+                    <div class="mb-3">
+                        <p class="text-base font-semibold dark:text-white">
+                            Sản phẩm
+                        </p>
+
+                        <p class="text-sm text-gray-600 dark:text-gray-300">
+                            Không bắt buộc. Bấm “Thêm” nếu Lead quan tâm sản phẩm cụ thể.
+                        </p>
+                    </div>
+
+                    @include('admin::leads.common.products')
+                </div>
+            </div>
         </div>
     </x-admin::form>
 
     {!! view_render_event('admin.leads.create.form.after') !!}
-
-    @pushOnce('scripts')
-        <script
-            type="text/x-template"
-            id="v-lead-create-template"
-        >
-            <div class="box-shadow flex flex-col gap-4 rounded-lg border border-gray-300 bg-white dark:border-gray-800 dark:bg-gray-900">
-                {!! view_render_event('admin.leads.edit.form_controls.before') !!}
-
-                <div class="flex w-full gap-2 border-b border-gray-300 dark:border-gray-800">
-                    <!-- Tabs -->
-                    <template
-                        v-for="tab in tabs"
-                        :key="tab.id"
-                    >
-                        {!! view_render_event('admin.leads.create.tabs.before') !!}
-
-                        <a
-                            :href="'#' + tab.id"
-                            :class="[
-                                'inline-block px-3 py-2.5 border-b-2  text-sm font-medium ',
-                                activeTab === tab.id
-                                ? 'text-brandColor border-brandColor dark:brandColor dark:brandColor'
-                                : 'text-gray-600 dark:text-gray-300  border-transparent hover:text-gray-800 hover:border-gray-400 dark:hover:border-gray-400  dark:hover:text-white'
-                            ]"
-                            @click="scrollToSection(tab.id)"
-                            :text="tab.label"
-                        >
-                        </a>
-
-                        {!! view_render_event('admin.leads.create.tabs.after') !!}
-                    </template>
-                </div>
-
-                <div class="flex flex-col gap-4 px-4 py-2">
-                    {!! view_render_event('admin.leads.create.details.before') !!}
-
-                    <!-- Details section -->
-                    <div
-                        class="flex flex-col gap-4"
-                        id="lead-details"
-                    >
-                        <div class="flex flex-col gap-1">
-                            <p class="text-base font-semibold dark:text-white">
-                                @lang('admin::app.leads.create.details')
-                            </p>
-
-                            <p class="text-gray-600 dark:text-white">
-                                @lang('admin::app.leads.create.details-info')
-                            </p>
-                        </div>
-
-                        <div class="w-1/2 max-md:w-full">
-                            {!! view_render_event('admin.leads.create.details.attributes.before') !!}
-
-                            <!-- Lead Attributes -->
-                            <div class="grid grid-cols-2 gap-4">
-
-                                <x-admin::attributes
-                                    :custom-attributes="$attributes"
-                                    :custom-validations="[
-                                        'expected_close_date' => [
-                                            'date_format:yyyy-MM-dd',
-                                            'after:' .  \Carbon\Carbon::yesterday()->format('Y-m-d')
-                                        ],
-                                    ]"
-                                />
-                            </div>
-
-                            {!! view_render_event('admin.leads.create.details.attributes.after') !!}
-                        </div>
-                    </div>
-
-                    {!! view_render_event('admin.leads.create.details.after') !!}
-
-                    {!! view_render_event('admin.leads.create.contact_person.before') !!}
-
-                    <!-- Contact Person -->
-                    <div
-                        class="flex flex-col gap-4"
-                        id="contact-person"
-                    >
-                        <div class="flex flex-col gap-1">
-                            <p class="text-base font-semibold dark:text-white">
-                                @lang('admin::app.leads.create.contact-person')
-                            </p>
-
-                            <p class="text-gray-600 dark:text-white">
-                                @lang('admin::app.leads.create.contact-info')
-                            </p>
-                        </div>
-
-                        <div class="w-1/2 max-md:w-full">
-                            <!-- Contact Person Component -->
-                            @include('admin::leads.common.contact')
-                        </div>
-                    </div>
-
-                    {!! view_render_event('admin.leads.create.contact_person.after') !!}
-
-                    <!-- Product Section -->
-                    {!! view_render_event('admin.leads.create.products.form_controls.before') !!}
-                    
-                    <div
-                        class="flex flex-col gap-4"
-                        id="products"
-                        >
-                        <div class="flex flex-col gap-1">
-                            <p class="text-base font-semibold dark:text-white">
-                                @lang('admin::app.leads.create.products')
-                            </p>
-
-                            <p class="text-gray-600 dark:text-white">
-                                @lang('admin::app.leads.create.products-info')
-                            </p>
-                        </div>
-
-                        <div>
-                            <!-- Product Component -->
-                            @include('admin::leads.common.products')
-                        </div>
-                    </div>
-
-                    {!! view_render_event('admin.leads.create.products.form_controls.after') !!}
-                </div>
-
-                {!! view_render_event('admin.leads.form_controls.after') !!}
-            </div>
-        </script>
-
-        <script type="module">
-            app.component('v-lead-create', {
-                template: '#v-lead-create-template',
-
-                data() {
-                    return {
-                        activeTab: 'lead-details',
-
-                        tabs: [
-                            { id: 'lead-details', label: "@lang('admin::app.leads.create.details')" },
-                            { id: 'contact-person', label: "@lang('admin::app.leads.create.contact-person')" },
-                            { id: 'products', label: "@lang('admin::app.leads.create.products')" }
-                        ],
-                    };
-                },
-
-                methods: {
-                    /**
-                     * Scroll to the section.
-                     *
-                     * @param {String} tabId
-                     *
-                     * @returns {void}
-                     */
-                    scrollToSection(tabId) {
-                        const section = document.getElementById(tabId);
-
-                        if (section) {
-                            section.scrollIntoView({ behavior: 'smooth' });
-                        }
-                    },
-                },
-            });
-        </script>
-    @endPushOnce
-
-    @pushOnce('styles')
-        <style>
-            html {
-                scroll-behavior: smooth;
-            }
-        </style>
-    @endPushOnce
 </x-admin::layouts>

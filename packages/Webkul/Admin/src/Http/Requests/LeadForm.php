@@ -5,6 +5,7 @@ namespace Webkul\Admin\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Webkul\Attribute\Repositories\AttributeRepository;
 use Webkul\Attribute\Repositories\AttributeValueRepository;
+use Webkul\Contact\Support\PhoneNormalizer;
 use Webkul\Core\Contracts\Validations\Decimal;
 
 class LeadForm extends FormRequest
@@ -21,8 +22,45 @@ class LeadForm extends FormRequest
      */
     public function __construct(
         protected AttributeRepository $attributeRepository,
-        protected AttributeValueRepository $attributeValueRepository
+        protected AttributeValueRepository $attributeValueRepository,
+        protected PhoneNormalizer $phoneNormalizer
     ) {}
+
+    /**
+     * Prepare the streamlined telesales payload.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('quick_add')) {
+            return;
+        }
+
+        $phone = $this->phoneNormalizer->normalize(
+            data_get($this->input('person', []), 'contact_numbers.0.value')
+        );
+
+        $name = trim((string) data_get($this->input('person', []), 'name'));
+        $name = $name ?: 'Khách '.substr($phone, -4);
+
+        $products = collect($this->input('products', []))
+            ->filter(fn ($product) => ! empty($product['product_id']))
+            ->all();
+
+        $this->merge([
+            'title' => $name,
+            'user_id' => auth()->guard('user')->id(),
+            'person' => array_merge($this->input('person', []), [
+                'name' => $name,
+                'emails' => [],
+                'contact_numbers' => [[
+                    'value' => $phone,
+                    'label' => 'work',
+                ]],
+                'user_id' => auth()->guard('user')->id(),
+            ]),
+            'products' => $products,
+        ]);
+    }
 
     /**
      * Determine if the product is authorized to make this request.
@@ -127,8 +165,28 @@ class LeadForm extends FormRequest
             }
         }
 
+        $telesalesRules = $this->has('quick_add') ? [] : [
+            'person.contact_numbers' => ['required', 'array', 'min:1'],
+            'person.contact_numbers.0.value' => [
+                'required',
+                'string',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if (! $this->phoneNormalizer->isValid((string) $value)) {
+                        $fail('Số điện thoại không hợp lệ.');
+                    }
+                },
+            ],
+            'person.name' => ['required', 'string', 'max:255'],
+            'person.emails' => ['nullable', 'array'],
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'lead_source_id' => ['nullable', 'exists:lead_sources,id'],
+            'group_id' => ['nullable', 'exists:groups,id'],
+        ];
+
         return [
             ...$this->rules,
+            ...$telesalesRules,
             'products' => 'array',
             'products.*.product_id' => 'sometimes|required|exists:products,id',
             'products.*.name' => 'required_with:products.*.product_id',

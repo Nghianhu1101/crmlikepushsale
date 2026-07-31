@@ -21,6 +21,15 @@
             </div>
 
             <div class="flex items-center gap-x-2.5">
+                @if (bouncer()->hasPermission('settings.user.groups'))
+                    <a
+                        href="{{ route('admin.telesales.groups.index') }}"
+                        class="secondary-button"
+                    >
+                        Phân data telesale
+                    </a>
+                @endif
+
                 <!-- Create button for Group -->
                 <div class="flex items-center gap-x-2.5">
                     {!! view_render_event('admin.settings.groups.index.breadcrumbs.after') !!}

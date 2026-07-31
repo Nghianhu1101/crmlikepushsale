@@ -6,6 +6,7 @@ use Illuminate\Container\Container;
 use Webkul\Attribute\Repositories\AttributeRepository;
 use Webkul\Attribute\Repositories\AttributeValueRepository;
 use Webkul\Contact\Contracts\Person;
+use Webkul\Contact\Support\PhoneNormalizer;
 use Webkul\Core\Eloquent\Repository;
 
 class PersonRepository extends Repository
@@ -33,6 +34,7 @@ class PersonRepository extends Repository
         protected AttributeRepository $attributeRepository,
         protected AttributeValueRepository $attributeValueRepository,
         protected OrganizationRepository $organizationRepository,
+        protected PhoneNormalizer $phoneNormalizer,
         Container $container
     ) {
         parent::__construct($container);
@@ -174,9 +176,13 @@ class PersonRepository extends Repository
         $data['unique_id'] = implode('|', $uniqueIdParts);
 
         if (isset($data['contact_numbers'])) {
-            $data['contact_numbers'] = collect($data['contact_numbers'])->filter(fn ($number) => ! is_null($number['value']))->toArray();
+            $data['contact_numbers'] = collect($data['contact_numbers'])->filter(fn ($number) => ! empty($number['value']))->values()->toArray();
 
-            $data['unique_id'] .= '|'.$data['contact_numbers'][0]['value'];
+            if (! empty($data['contact_numbers'])) {
+                $data['normalized_phone'] = $this->phoneNormalizer->normalize($data['contact_numbers'][0]['value']);
+                $data['contact_numbers'][0]['value'] = $data['normalized_phone'];
+                $data['unique_id'] .= '|'.$data['normalized_phone'];
+            }
         }
 
         return $data;

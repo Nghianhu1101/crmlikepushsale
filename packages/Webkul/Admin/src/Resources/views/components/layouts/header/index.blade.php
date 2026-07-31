@@ -38,6 +38,8 @@
     </div>
 
     <div class="flex items-center gap-2.5">
+        @include('telesales::notifications')
+
         <div class="md:hidden">
             <!-- Mega Search Bar -->
             @include('admin::components.layouts.header.mobile.mega-search')
