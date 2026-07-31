@@ -6,11 +6,11 @@ it('shows the help page to an authenticated admin', function () {
     test()->actingAs($admin)
         ->get(route('admin.help.index'))
         ->assertOk()
-        ->assertSee('Help & Resources')
-        ->assertSee('Cloud Hosting')
-        ->assertSee('Extensions')
+        ->assertSee('Trợ giúp & Tài nguyên')
+        ->assertSee('Lưu trữ đám mây')
+        ->assertSee('Tiện ích mở rộng')
         ->assertSee('krayincrm.com/cloud-hosting')
-        ->assertSee('Still need a hand?')
-        ->assertSee('Community Forums')
-        ->assertSee('Video Tutorials');
+        ->assertSee('Vẫn cần trợ giúp?')
+        ->assertSee('Diễn đàn cộng đồng')
+        ->assertSee('Video hướng dẫn');
 });
