@@ -12,6 +12,7 @@ use Webkul\Lead\Models\Pipeline;
 use Webkul\Lead\Models\Source;
 use Webkul\Lead\Models\Stage;
 use Webkul\Lead\Models\Type;
+use Webkul\User\Models\User;
 
 class VietnameseTelesalesDemoSeeder extends Seeder
 {
@@ -35,26 +36,19 @@ class VietnameseTelesalesDemoSeeder extends Seeder
     private function seedSources(): array
     {
         $sourceNames = [
-            1 => 'Nhập trực tiếp',
-            2 => 'Website',
-            3 => 'Facebook',
-            4 => 'Messenger',
+            'Nhập trực tiếp',
+            'Website',
+            'Facebook',
+            'Messenger',
         ];
 
-        foreach ($sourceNames as $id => $name) {
-            Source::query()->updateOrCreate(['id' => $id], ['name' => $name]);
+        $sources = [];
+
+        foreach ($sourceNames as $name) {
+            $sources[] = Source::query()->firstOrCreate(['name' => $name]);
         }
 
-        Source::query()
-            ->whereNotIn('id', array_keys($sourceNames))
-            ->whereDoesntHave('leads')
-            ->delete();
-
-        return Source::query()
-            ->whereIn('id', array_keys($sourceNames))
-            ->orderBy('id')
-            ->get()
-            ->all();
+        return $sources;
     }
 
     /**
@@ -63,24 +57,17 @@ class VietnameseTelesalesDemoSeeder extends Seeder
     private function seedTypes(): array
     {
         $typeNames = [
-            1 => 'Khách mới',
-            2 => 'Khách cũ',
+            'Khách mới',
+            'Khách cũ',
         ];
 
-        foreach ($typeNames as $id => $name) {
-            Type::query()->updateOrCreate(['id' => $id], ['name' => $name]);
+        $types = [];
+
+        foreach ($typeNames as $name) {
+            $types[] = Type::query()->firstOrCreate(['name' => $name]);
         }
 
-        Type::query()
-            ->whereNotIn('id', array_keys($typeNames))
-            ->whereNotIn('id', Lead::query()->select('lead_type_id'))
-            ->delete();
-
-        return Type::query()
-            ->whereIn('id', array_keys($typeNames))
-            ->orderBy('id')
-            ->get()
-            ->all();
+        return $types;
     }
 
     /**
@@ -88,18 +75,13 @@ class VietnameseTelesalesDemoSeeder extends Seeder
      */
     private function seedPipeline(): array
     {
-        Pipeline::query()->update(['is_default' => false]);
-
         $pipeline = Pipeline::query()->firstOrCreate(
-            ['id' => 1],
-            ['name' => 'Telesale']
+            ['name' => 'Telesale'],
+            [
+                'is_default' => ! Pipeline::query()->where('is_default', true)->exists(),
+                'rotten_days' => 7,
+            ]
         );
-
-        $pipeline->update([
-            'name' => 'Telesale',
-            'is_default' => true,
-            'rotten_days' => 7,
-        ]);
 
         $stageDefinitions = [
             ['code' => 'new', 'name' => 'Data mới', 'probability' => 0],
@@ -110,31 +92,23 @@ class VietnameseTelesalesDemoSeeder extends Seeder
             ['code' => 'failed', 'name' => 'Không thành công', 'probability' => 0],
         ];
 
-        $existingStages = $pipeline->stages()->get()->values();
         $stageIds = [];
 
         foreach ($stageDefinitions as $index => $definition) {
-            $stage = $existingStages->get($index);
-
-            if ($stage) {
-                $stage->update(array_merge($definition, [
-                    'sort_order' => $index + 1,
-                ]));
-            } else {
-                $stage = Stage::query()->create(array_merge($definition, [
-                    'sort_order' => $index + 1,
+            $stage = Stage::query()->firstOrCreate(
+                [
                     'lead_pipeline_id' => $pipeline->id,
-                ]));
-            }
+                    'code' => $definition['code'],
+                ],
+                [
+                    'name' => $definition['name'],
+                    'probability' => $definition['probability'],
+                    'sort_order' => $index + 1,
+                ]
+            );
 
             $stageIds[] = $stage->id;
         }
-
-        Stage::query()
-            ->where('lead_pipeline_id', $pipeline->id)
-            ->whereNotIn('id', $stageIds)
-            ->whereDoesntHave('leads')
-            ->delete();
 
         return [
             $pipeline->fresh(),
@@ -170,6 +144,7 @@ class VietnameseTelesalesDemoSeeder extends Seeder
 
         $stageIndexes = [0, 0, 1, 1, 2, 2, 3, 3, 4, 5];
         $attributeValueRepository = app(AttributeValueRepository::class);
+        $ownerId = User::query()->find(1)?->id ?: User::query()->value('id');
 
         foreach ($customers as $index => $name) {
             $phone = '090100'.str_pad((string) ($index + 1), 4, '0', STR_PAD_LEFT);
@@ -184,16 +159,20 @@ class VietnameseTelesalesDemoSeeder extends Seeder
                     'value' => $phone,
                     'label' => 'work',
                 ]],
-                'unique_id' => '1|'.$phone,
-                'user_id' => 1,
+                'unique_id' => ($ownerId ?: 0).'|'.$phone,
+                'user_id' => $ownerId,
             ];
 
-            $person = Person::query()->updateOrCreate(
+            $person = Person::query()->firstOrCreate(
                 ['normalized_phone' => $phone],
                 $personData
             );
 
-            $closedAt = in_array($stage->code, ['won', 'lost'])
+            if (! $person->wasRecentlyCreated) {
+                continue;
+            }
+
+            $closedAt = in_array($stage->code, ['won', 'failed'])
                 ? Carbon::now()
                 : null;
 
@@ -204,19 +183,15 @@ class VietnameseTelesalesDemoSeeder extends Seeder
                 'status' => 1,
                 'closed_at' => $closedAt,
                 'expected_close_date' => null,
-                'user_id' => 1,
+                'user_id' => $ownerId,
                 'lead_source_id' => $source->id,
                 'lead_type_id' => $type->id,
                 'lead_pipeline_stage_id' => $stage->id,
+                'person_id' => $person->id,
+                'lead_pipeline_id' => $pipeline->id,
             ];
 
-            $lead = Lead::query()->updateOrCreate(
-                [
-                    'person_id' => $person->id,
-                    'lead_pipeline_id' => $pipeline->id,
-                ],
-                $leadData
-            );
+            $lead = Lead::query()->create($leadData);
 
             $attributeValueRepository->save(array_merge($personData, [
                 'entity_type' => 'persons',

@@ -118,7 +118,7 @@ Các phần dễ bị hiểu nhầm là đã hoàn thiện nhưng thực tế **
 
 11. Notification và reminder chỉ được query trực tiếp trong Blade khi render header; không có tiến trình chủ động báo đúng thời điểm.
 12. Order cho phép chuyển trạng thái theo bất kỳ thứ tự nào, chưa có audit lịch sử trạng thái và chưa khóa các bước nghiệp vụ.
-13. `VietnameseTelesalesDemoSeeder` có thao tác xóa source không được tham chiếu và ép ID 1–4. Không nên chạy trên production/database đang dùng nếu chưa rà soát.
+13. `VietnameseTelesalesDemoSeeder` đã được giới hạn thành seeder không phá hủy: không ép ID, không xóa Source/Type/Stage và không ghi đè Person có cùng số. Seeder vẫn tạo Lead trực tiếp nên dữ liệu mẫu cũ không tự có đầy đủ metadata telesale.
 14. Nhiều chuỗi telesale được hard-code trong PHP/Blade, làm khó bảo trì đa ngôn ngữ và kiểm tra thiếu bản dịch.
 
 ## 4. Migration chưa chạy
@@ -157,10 +157,10 @@ Lệnh đã chạy:
 
 Kết quả:
 
-- **32 test pass**
-- **143 assertion pass**
+- **34 test pass**
+- **164 assertion pass**
 - **0 fail**
-- Thời gian PHPUnit/Pest báo cáo ở lần kiểm tra gần nhất: `2.93s`
+- Thời gian PHPUnit/Pest báo cáo ở lần kiểm tra gần nhất: `3.79s`
 
 Các nhóm pass:
 
@@ -173,6 +173,7 @@ Các nhóm pass:
 - API sai token và idempotency `external_id`.
 - Lịch sử chăm sóc, callback validation/reminder và notification.
 - Báo cáo Sale/Marketing, chống filter IDOR, công thức doanh thu, hoàn/hủy, bộ lọc và owner snapshot.
+- Demo seeder chạy lặp không xóa cấu hình riêng, không ghi đè Person và không tạo trùng Person/Lead.
 
 Chưa được kiểm thử:
 
