@@ -1,6 +1,6 @@
 # Báo cáo trạng thái triển khai Krayin Telesale
 
-Ngày kiểm tra: 29/07/2026 (Asia/Bangkok)
+Ngày kiểm tra gần nhất: 31/07/2026 (Asia/Bangkok)
 
 ## Phạm vi và cách kiểm tra
 
@@ -9,7 +9,8 @@ Ngày kiểm tra: 29/07/2026 (Asia/Bangkok)
 - Locale đang chạy: `vi`.
 - Đã kiểm tra Git, migrations, database hiện tại, routes, controllers, requests, services, models, ACL, Blade/Vue và tests.
 - Đã kiểm tra HTTP trên server nền có sẵn tại `127.0.0.1:8080`: trang đăng nhập trả `200`; API không có token hợp lệ trả `401`.
-- Không chạy migration, không reset database, không sửa `vendor`, không khởi động server mới và không triển khai chức năng mới.
+- Đã bổ sung lớp UI workflow theo ảnh PushSale trong package Telesales; chi tiết tại `docs/WORKFLOW_REFACTOR.md`.
+- Không chạy migration, không reset database, không sửa `vendor` và không khởi động server mới.
 
 ## Tóm tắt phân loại
 
@@ -159,10 +160,10 @@ Lệnh đã chạy:
 
 Kết quả:
 
-- **37 test pass**
-- **214 assertion pass**
+- **42 test pass**
+- **245 assertion pass**
 - **0 fail**
-- Thời gian PHPUnit/Pest báo cáo ở lần kiểm tra gần nhất: `3.86s`
+- Thời gian PHPUnit/Pest báo cáo ở lần kiểm tra gần nhất: `4.19s`
 
 Các nhóm pass:
 
@@ -177,6 +178,7 @@ Các nhóm pass:
 - Báo cáo Sale/Marketing, chống filter IDOR, công thức doanh thu, hoàn/hủy, bộ lọc và owner snapshot.
 - Demo seeder chạy lặp không xóa cấu hình riêng, không ghi đè Person và không tạo trùng Person/Lead.
 - Seeder nghiệm thu tạo đúng bốn tài khoản, đăng nhập được, cấu hình hai sale nhận data và phân hai Lead liên tiếp theo round-robin kèm notification.
+- Menu workflow hiển thị đúng theo Admin, Marketing, Sale và Trưởng nhóm; các mục chưa có backend không sinh URL.
 
 Chưa được kiểm thử:
 
@@ -185,7 +187,8 @@ Chưa được kiểm thử:
 - Phạm vi toàn nhóm của Trưởng nhóm.
 - API rate limit, token rotation và replay.
 - Notification realtime.
-- Responsive/mobile và hành trình E2E telesale.
+- Hành trình E2E đầy đủ từ nhập data đến tác nghiệp/đơn hàng; riêng responsive
+  workflow đã được smoke test bằng Playwright ở desktop `1440px` và mobile `390px`.
 - Order nhiều sản phẩm, lịch sử trạng thái và tích hợp giao hàng/COD.
 
 Bộ Playwright gốc được phát hiện tại `packages/Webkul/Admin/tests/e2e-pw`, nhưng dependency `@playwright/test` chưa được cài trong workspace và hiện không có case telesale. Vì vậy bộ này **không được chạy**, không được tính là pass hoặc fail.
