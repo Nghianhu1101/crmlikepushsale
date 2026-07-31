@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Webkul\Contact\Models\Person;
 use Webkul\Lead\Models\Lead;
+use Webkul\Telesales\Models\LeadMeta;
 
 uses(DatabaseTransactions::class);
 
@@ -40,16 +41,18 @@ it('creates a contact and lead from only a phone number', function () {
 
     $person = Person::query()->where('normalized_phone', $phone)->first();
     $lead = Lead::query()->where('person_id', $person?->id)->first();
+    $meta = LeadMeta::query()->where('lead_id', $lead?->id)->first();
 
     $response->assertRedirect();
 
     expect($person)->not->toBeNull()
         ->and($person->name)->toBe('Khách '.substr($phone, -4))
         ->and($person->emails)->toBe([])
-        ->and($person->user_id)->toBe($admin->id)
         ->and($lead)->not->toBeNull()
         ->and($lead->title)->toBe('['.$phone.'] - '.$person->name)
-        ->and($lead->user_id)->toBe($admin->id)
+        ->and($lead->user_id)->not->toBeNull()
+        ->and($person->user_id)->toBe($lead->user_id)
+        ->and($meta?->assigned_user_id)->toBe($lead->user_id)
         ->and($lead->stage->code)->toBe('new')
         ->and($lead->stage->name)->toBe('Data mới');
 });

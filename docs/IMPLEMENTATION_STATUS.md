@@ -101,7 +101,7 @@ Các phần dễ bị hiểu nhầm là đã hoàn thiện nhưng thực tế **
 ### Mức cao
 
 1. **Mã telesale đã được theo dõi trên nhánh cục bộ `stabilize/telesales-phase-0`, nhưng chưa được đẩy lên remote.** Cần review và push/merge theo quy trình của dự án trước khi triển khai sang máy khác.
-2. **Thiếu metadata cho dữ liệu hiện hữu.** Database có 12 Lead nhưng chỉ 2 `telesales_lead_meta`; 10 Lead không vào báo cáo, Top 10, ownership snapshot và lịch sử phân bổ. `VietnameseTelesalesDemoSeeder` tạo Lead trực tiếp, không dùng `IncomingLeadService`.
+2. **Thiếu metadata cho dữ liệu hiện hữu.** Database có 14 Lead nhưng chỉ 4 `telesales_lead_meta`; 10 Lead cũ không vào báo cáo, Top 10, ownership snapshot và lịch sử phân bổ. `VietnameseTelesalesDemoSeeder` tạo Lead trực tiếp, không dùng `IncomingLeadService`.
 3. **Trưởng nhóm chưa có scope đúng.** Role tồn tại nhưng bị `TelesalesAccessService` phân loại thành Sale; Dashboard và Orders chỉ lọc theo chính user đó.
 
 ### Mức trung bình
@@ -120,6 +120,8 @@ Các phần dễ bị hiểu nhầm là đã hoàn thiện nhưng thực tế **
 12. Order cho phép chuyển trạng thái theo bất kỳ thứ tự nào, chưa có audit lịch sử trạng thái và chưa khóa các bước nghiệp vụ.
 13. `VietnameseTelesalesDemoSeeder` đã được giới hạn thành seeder không phá hủy: không ép ID, không xóa Source/Type/Stage và không ghi đè Person có cùng số. Seeder vẫn tạo Lead trực tiếp nên dữ liệu mẫu cũ không tự có đầy đủ metadata telesale.
 14. Nhiều chuỗi telesale được hard-code trong PHP/Blade, làm khó bảo trì đa ngôn ngữ và kiểm tra thiếu bản dịch.
+15. Khi tạo Lead thật trên PHP hiện tại, `Webkul\Activity\Traits\LogsActivity` phát cảnh báo deprecated do gọi `json_decode(null)`. Luồng vẫn hoàn thành nhưng cần sửa trước khi nâng mức báo lỗi hoặc nâng PHP.
+16. Trang chi tiết Lead ở viewport 390px hiển thị đúng nội dung và nút `tel:`, nhưng thanh stage có chiều rộng khoảng 805px nên gây cuộn ngang trên mobile.
 
 ## 4. Migration chưa chạy
 
@@ -140,12 +142,12 @@ Các migration mới đều đã chạy:
 
 Snapshot database lúc audit:
 
-- 13 Person; cả 13 có `normalized_phone`.
-- 12 Lead; chỉ 2 Lead có `telesales_lead_meta`.
-- 1 cấu hình nhóm, 1 thành viên đang nhận data.
-- 2 notification, 2 call history, 1 order.
+- 15 Person; cả 15 có `normalized_phone`.
+- 14 Lead; 4 Lead có `telesales_lead_meta`, còn 10 Lead cũ chưa có metadata.
+- 2 cấu hình nhóm, 4 thành viên telesale; nhóm mặc định là `Nhóm Sale Demo` với 2 sale đang nhận data.
+- 5 notification, 4 call history, 2 order.
 - Có 4 role: Quản trị viên, Marketing, Sale, Trưởng nhóm sale.
-- Chỉ có 1 user thực tế: Administrator, quyền global/Admin.
+- Có 5 user: Administrator và 4 tài khoản nghiệm thu Marketing, Sale 1, Sale 2, Trưởng nhóm.
 
 ## 5. Test đang pass/fail
 
@@ -157,10 +159,10 @@ Lệnh đã chạy:
 
 Kết quả:
 
-- **34 test pass**
-- **164 assertion pass**
+- **37 test pass**
+- **214 assertion pass**
 - **0 fail**
-- Thời gian PHPUnit/Pest báo cáo ở lần kiểm tra gần nhất: `3.79s`
+- Thời gian PHPUnit/Pest báo cáo ở lần kiểm tra gần nhất: `3.86s`
 
 Các nhóm pass:
 
@@ -174,6 +176,7 @@ Các nhóm pass:
 - Lịch sử chăm sóc, callback validation/reminder và notification.
 - Báo cáo Sale/Marketing, chống filter IDOR, công thức doanh thu, hoàn/hủy, bộ lọc và owner snapshot.
 - Demo seeder chạy lặp không xóa cấu hình riêng, không ghi đè Person và không tạo trùng Person/Lead.
+- Seeder nghiệm thu tạo đúng bốn tài khoản, đăng nhập được, cấu hình hai sale nhận data và phân hai Lead liên tiếp theo round-robin kèm notification.
 
 Chưa được kiểm thử:
 

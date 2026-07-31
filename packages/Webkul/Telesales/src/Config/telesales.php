@@ -3,6 +3,8 @@
 return [
     'api_token' => env('TELESALES_API_TOKEN'),
 
+    'demo_password' => env('TELESALES_DEMO_PASSWORD'),
+
     'revenue_statuses' => [
         'confirmed',
         'shipping',
