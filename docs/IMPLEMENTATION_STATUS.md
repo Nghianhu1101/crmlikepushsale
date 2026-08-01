@@ -1,6 +1,6 @@
 # Báo cáo trạng thái triển khai Krayin Telesale
 
-Ngày kiểm tra gần nhất: 31/07/2026 (Asia/Bangkok)
+Ngày kiểm tra gần nhất: 01/08/2026 (Asia/Bangkok)
 
 ## Phạm vi và cách kiểm tra
 
@@ -10,7 +10,7 @@ Ngày kiểm tra gần nhất: 31/07/2026 (Asia/Bangkok)
 - Đã kiểm tra Git, migrations, database hiện tại, routes, controllers, requests, services, models, ACL, Blade/Vue và tests.
 - Đã kiểm tra HTTP trên server nền có sẵn tại `127.0.0.1:8080`: trang đăng nhập trả `200`; API không có token hợp lệ trả `401`.
 - Đã bổ sung lớp UI workflow theo ảnh PushSale trong package Telesales; chi tiết tại `docs/WORKFLOW_REFACTOR.md`.
-- Không chạy migration, không reset database, không sửa `vendor` và không khởi động server mới.
+- Đã chạy migration bổ sung kết nối nguồn data; không reset database, không sửa `vendor` và không khởi động server mới.
 
 ## Tóm tắt phân loại
 
@@ -24,13 +24,13 @@ Ngày kiểm tra gần nhất: 31/07/2026 (Asia/Bangkok)
 | Bật/tắt nhận data | **Đã hoàn chỉnh** | `telesales_group_members.receives_data` có giao diện cấu hình và được service lọc cùng trạng thái hoạt động của user. |
 | Thông báo data mới | **Có nhưng lỗi hoặc thiếu** | Có notification nội bộ, badge chuông, đánh dấu đã đọc và link đúng Lead. Chỉ xuất hiện khi tải lại trang; chưa có polling, WebSocket, web push/PWA hay notification hệ điều hành. |
 | Tác nghiệp gọi điện, ghi chú và hẹn gọi lại | **Đã hoàn chỉnh** | Có nút `tel:`, kết quả gọi, ghi chú, callback bắt buộc ngày giờ, lịch sử append-only, Activity và reminder nội bộ. Chưa tích hợp tổng đài/ghi âm cuộc gọi, nhưng không thuộc MVP hiện tại. |
-| API `incoming-leads` | **Đã hoàn chỉnh** | `POST /api/v1/incoming-leads` dùng chung service, bearer token từ `.env`, validate payload, chống lặp phone/external ID, trả `201/409/401/422` phù hợp và không log token. Cần hardening trước production, xem phần bảo mật. |
+| API `incoming-leads` | **Đã hoàn chỉnh** | `POST /api/v1/incoming-leads` dùng chung service; hỗ trợ token riêng theo nguồn được tạo trên web và token `.env` tương thích ngược. Có ánh xạ trường, nguồn/chiến dịch/nhóm Sale/Marketing cố định, chống lặp phone/external ID, truy vết kết nối và trả `201/409/401/422` phù hợp. |
 | Đơn hàng telesale | **Có nhưng lỗi hoặc thiếu** | Có bảng order/item, tạo đơn từ Lead, trạng thái, doanh thu và danh sách theo quyền. Mới hỗ trợ một sản phẩm mỗi lần tạo; chưa có sửa/xóa đơn, nhiều dòng hàng, địa chỉ, thanh toán/COD thực, vận đơn, kho, lịch sử đổi trạng thái hoặc state machine. |
 | Dashboard Sale/Marketing | **Có nhưng lỗi hoặc thiếu** | Có báo cáo doanh thu theo Sale/Marketing, phạm vi dữ liệu, bộ lọc và test công thức. Báo cáo chỉ đọc các Lead có `telesales_lead_meta`; 10/12 Lead hiện tại bị bỏ ngoài báo cáo. Không có góc nhìn tổng hợp dành riêng cho Trưởng nhóm. |
 | Top 10 | **Có nhưng lỗi hoặc thiếu** | Top 10 là dữ liệu backend thật từ `RevenueReportService`, không phải UI giả, và có giao diện kiểu PushSale. Vẫn chịu thiếu dữ liệu legacy và thiếu phạm vi Trưởng nhóm như Dashboard. |
 | Phân quyền Admin, Marketing, Sale, Trưởng nhóm | **Có nhưng lỗi hoặc thiếu** | Có bốn role trong DB và ACL theo route/`view_permission`. Admin, Marketing và Sale có scope chính. `TelesalesAccessService` không nhận biết Trưởng nhóm, nên role này bị coi như Sale và Dashboard/Order chỉ thấy dữ liệu cá nhân. Database hiện chỉ có tài khoản Administrator; ba role còn lại chưa có tài khoản thật để vận hành. |
 | Giao diện tiếng Việt | **Có nhưng lỗi hoặc thiếu** | Locale `vi` đang bật; audit không phát hiện thiếu translation key trong các package có locale. Tuy nhiên nhiều màn hình telesale dùng chuỗi hard-code thay vì translation key và chưa có kiểm thử trình duyệt toàn bộ UI, nên chưa thể xác nhận “toàn bộ UI” ở mọi trang/trạng thái lỗi. |
-| Test tự động | **Có nhưng lỗi hoặc thiếu** | PHPUnit/Pest hiện có và toàn bộ test PHP pass. Chưa có test đồng thời round-robin, upgrade/backfill legacy, Trưởng nhóm, API rate limit, notification realtime, responsive/mobile hoặc E2E riêng cho telesale. Bộ Playwright gốc tồn tại nhưng dependency chưa được cài và không có case telesale. |
+| Test tự động | **Có nhưng lỗi hoặc thiếu** | PHPUnit/Pest hiện có và toàn bộ 51 test PHP pass. Đã test token theo nguồn, ánh xạ payload, tạm dừng token, chống IDOR, thống kê nguồn và bảng tác nghiệp Sale; chưa có test đồng thời round-robin, upgrade/backfill legacy, Trưởng nhóm, API rate limit, notification realtime hoặc E2E đầy đủ. |
 
 Không có chức năng nào trong danh sách được xác định là **hoàn toàn chưa có**. Các mục chưa hoàn chỉnh đều đã có cả UI lẫn backend ở một mức nhất định.
 
@@ -68,7 +68,9 @@ Không có chức năng nào trong danh sách được xác định là **hoàn 
 - Request: `IncomingLeadRequest`.
 - Controller: `IncomingLeadController`.
 - Service dùng chung với web: `IncomingLeadService`.
-- HTTP smoke test không token hợp lệ trả `401`, đúng thiết kế.
+- Màn hình cấu hình: `Marketing > Kết nối landing - website` hoặc `Kết nối Facebook/API`.
+- Mỗi nguồn có token băm riêng, Marketing phụ trách, nguồn CRM, chiến dịch, nhóm Sale và ánh xạ trường payload.
+- Token có thể tạm dừng/cấp lại; Lead lưu `incoming_source_id`; kết nối lưu số lượt nhận, số trùng và thời gian nhận gần nhất.
 
 ### Dashboard, Top 10 và order trong phạm vi dữ liệu mới
 
@@ -119,7 +121,7 @@ Các phần dễ bị hiểu nhầm là đã hoàn thiện nhưng thực tế **
 
 4. **Không có Policy riêng cho module telesale.** Quyền đang phân tán giữa ACL route, `bouncer()->getAuthorizedUserIds()` và các đoạn `abort(403)` trong controller. Cách này khó audit và dễ tạo IDOR khi thêm route mới.
 5. **Nhận diện Marketing dựa vào chuỗi tên role chứa `marketing`.** Đổi tên role hoặc dùng tên tiếng Việt khác có thể làm sai ownership/scope.
-6. **API dùng một bearer token tĩnh cho toàn hệ thống và không có rate limiter riêng.** Chưa có token theo nguồn, rotation, timestamp/signature chống replay, audit client hoặc giới hạn tốc độ.
+6. **API chưa có rate limiter và chữ ký chống replay.** Token riêng theo nguồn, rotation và audit số lượt nhận đã có; vẫn cần giới hạn tốc độ, timestamp/signature và chính sách lưu log trước production.
 7. **`APP_DEBUG=true`.** Phù hợp máy local, nhưng nếu cấu hình này được đưa ra mạng có thể lộ stack trace, SQL và dữ liệu request.
 8. **Số điện thoại đầy đủ vẫn nằm trong notification body của Sale.** Danh sách và trang tóm tắt Marketing đã được masking; cần tiếp tục xác nhận chính sách dữ liệu cá nhân cho notification và log.
 9. **Backfill phone chỉ xử lý số đầu tiên.** Số phụ trong JSON không được lập index; bản ghi legacy trùng bị bỏ qua và để `normalized_phone` rỗng thay vì có hàng chờ xử lý. Database hiện tại không còn giá trị null, nhưng migration vẫn rủi ro khi áp dụng trên dữ liệu khác.
@@ -151,6 +153,7 @@ Các migration mới đều đã chạy:
 | `2026_07_29_100004_create_telesales_orders` | 6 | Ran |
 | `2026_07_29_100005_make_marketing_mapping_keys_unique` | 7 | Ran |
 | `2026_08_01_000000_add_marketing_feedback_to_telesales_call_histories` | 8 | Ran |
+| `2026_08_01_100000_create_telesales_source_connections` | 9 | Ran |
 
 Snapshot database lúc audit:
 
@@ -171,10 +174,10 @@ Lệnh đã chạy:
 
 Kết quả:
 
-- **44 test pass**
-- **268 assertion pass**
+- **51 test pass**
+- **309 assertion pass**
 - **0 fail**
-- Thời gian PHPUnit/Pest báo cáo ở lần kiểm tra gần nhất: `5.08s`.
+- Thời gian PHPUnit/Pest báo cáo ở lần kiểm tra gần nhất: `5.62s`.
 
 Các nhóm pass:
 
@@ -187,6 +190,7 @@ Các nhóm pass:
 - Marketing thấy đúng Sale, kết quả và phản hồi được chia sẻ nhưng không thấy
   ghi chú nội bộ; số điện thoại bị che và data Marketing khác bị loại khỏi scope.
 - API sai token và idempotency `external_id`.
+- API token riêng theo nguồn, payload ánh xạ, tạm dừng/cấp lại token, scope Marketing và truy vết nguồn.
 - Lịch sử chăm sóc, callback validation/reminder và notification.
 - Báo cáo Sale/Marketing, chống filter IDOR, công thức doanh thu, hoàn/hủy, bộ lọc và owner snapshot.
 - Demo seeder chạy lặp không xóa cấu hình riêng, không ghi đè Person và không tạo trùng Person/Lead.
@@ -199,7 +203,7 @@ Chưa được kiểm thử:
 - Hai request phân data chạy đồng thời thật.
 - Upgrade/backfill database có số trùng hoặc nhiều số trên một Person.
 - Phạm vi toàn nhóm của Trưởng nhóm.
-- API rate limit, token rotation và replay.
+- API rate limit, timestamp/signature chống replay.
 - Notification realtime.
 - Hành trình E2E đầy đủ từ nhập data đến tác nghiệp/đơn hàng; riêng responsive
   workflow đã được smoke test bằng Playwright ở desktop `1440px` và mobile `390px`.
@@ -221,7 +225,7 @@ Kết quả exit code `0`, không có locale/key bị thiếu. Các giá trị g
 2. **Viết migration/backfill idempotent cho `telesales_lead_meta`**, ownership và assignment của Lead hiện hữu; sửa demo seeder để luôn dùng service chung và không xóa dữ liệu ngoài phạm vi.
 3. **Hoàn thiện Trưởng nhóm** bằng role/permission ổn định và scope theo group cho Lead, Order, Dashboard, Top 10; thêm test với role custom thật.
 4. **Chuẩn hóa authorization** bằng Policy/Gate hoặc một access service thống nhất cho mọi route telesale; bổ sung test IDOR cho notification, group config, mapping, order và ownership.
-5. **Hardening API**: rate limit, token theo client/source, rotation, audit client, chống replay và giới hạn quyền chọn group/source.
+5. **Hardening API**: bổ sung rate limit, timestamp/signature chống replay và chính sách lưu log; token theo nguồn, rotation, audit và giới hạn group/source đã có.
 6. **Hoàn thiện notification**: polling hoặc broadcast nội bộ trước; web push/PWA để giai đoạn sau.
 7. **Hoàn thiện order MVP**: nhiều dòng hàng, state machine, audit status, sửa/hủy có kiểm soát; sau đó mới làm kho/vận chuyển/COD.
 8. **Chuyển chuỗi hard-code sang translation key** và chạy Playwright trên các luồng desktop/mobile bằng bốn vai trò.
