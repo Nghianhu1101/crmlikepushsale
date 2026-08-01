@@ -9,9 +9,20 @@ class IncomingLeadRequest extends FormRequest
 {
     protected function prepareForValidation(): void
     {
-        $this->merge([
-            'phone' => app(PhoneNormalizer::class)->normalize($this->input('phone')),
-        ]);
+        $payload = $this->all();
+        $connection = $this->attributes->get('telesales_source_connection');
+
+        foreach ($connection?->field_mapping ?? [] as $target => $sourcePath) {
+            $value = data_get($payload, $sourcePath);
+
+            if ($value !== null) {
+                $payload[$target] = $value;
+            }
+        }
+
+        $payload['phone'] = app(PhoneNormalizer::class)->normalize($payload['phone'] ?? null);
+
+        $this->replace($payload);
     }
 
     public function authorize(): bool

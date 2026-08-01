@@ -150,6 +150,7 @@ class IncomingLeadService
                     'marketing_owner_id' => $marketingOwnerId,
                     'sales_owner_id' => $ownerId,
                     'marketing_group_id' => $marketingGroupId,
+                    'incoming_source_id' => $input['incoming_source_id'] ?? null,
                     'data_received_at' => now(),
                     'assigned_at' => $ownerId ? now() : null,
                 ]);

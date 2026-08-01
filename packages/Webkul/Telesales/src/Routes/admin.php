@@ -9,6 +9,7 @@ use Webkul\Telesales\Http\Controllers\OrderController;
 use Webkul\Telesales\Http\Controllers\OutcomeController;
 use Webkul\Telesales\Http\Controllers\OwnershipController;
 use Webkul\Telesales\Http\Controllers\RankingController;
+use Webkul\Telesales\Http\Controllers\SourceConnectionController;
 
 Route::get('rankings', [RankingController::class, 'index'])
     ->name('admin.telesales.rankings.index');
@@ -33,6 +34,21 @@ Route::delete('marketing-mappings/{mapping}', [MarketingMappingController::class
 
 Route::get('created-leads', CreatedLeadController::class)
     ->name('admin.telesales.created-leads.index');
+
+Route::get('source-connections', [SourceConnectionController::class, 'index'])
+    ->name('admin.telesales.source-connections.index');
+
+Route::post('source-connections', [SourceConnectionController::class, 'store'])
+    ->name('admin.telesales.source-connections.store');
+
+Route::put('source-connections/{connection}', [SourceConnectionController::class, 'update'])
+    ->name('admin.telesales.source-connections.update');
+
+Route::patch('source-connections/{connection}/toggle', [SourceConnectionController::class, 'toggle'])
+    ->name('admin.telesales.source-connections.toggle');
+
+Route::post('source-connections/{connection}/regenerate', [SourceConnectionController::class, 'regenerate'])
+    ->name('admin.telesales.source-connections.regenerate');
 
 Route::get('orders', [OrderController::class, 'index'])
     ->name('admin.telesales.orders.index');

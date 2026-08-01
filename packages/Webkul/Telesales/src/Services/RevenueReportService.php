@@ -336,13 +336,16 @@ class RevenueReportService
         $timezone = config('app.timezone', 'Asia/Bangkok');
         $startDate = $filters['start_date'] ?? now($timezone)->startOfMonth()->format('Y-m-d');
         $endDate = $filters['end_date'] ?? now($timezone)->format('Y-m-d');
+        $perspective = $role === 'marketing'
+            ? 'marketing'
+            : ($filters['perspective'] ?? 'sale');
 
         $normalized = [
             'start_date' => $startDate,
             'end_date' => $endDate,
             'start_at' => Carbon::createFromFormat('Y-m-d', $startDate, $timezone)->startOfDay(),
             'end_at' => Carbon::createFromFormat('Y-m-d', $endDate, $timezone)->endOfDay(),
-            'date_basis' => $filters['date_basis'] ?? 'order_closed',
+            'date_basis' => $filters['date_basis'] ?? ($perspective === 'marketing' ? 'data_received' : 'order_closed'),
             'revenue_basis' => $filters['revenue_basis'] ?? 'net',
             'customer_type' => $filters['customer_type'] ?? 'all',
             'product_id' => $filters['product_id'] ?? null,
@@ -352,7 +355,7 @@ class RevenueReportService
             'sales_owner_id' => $filters['sales_owner_id'] ?? null,
             'marketing_owner_id' => $filters['marketing_owner_id'] ?? null,
             'status' => $filters['status'] ?? null,
-            'perspective' => $filters['perspective'] ?? 'sale',
+            'perspective' => $perspective,
         ];
 
         if ($role === 'marketing') {

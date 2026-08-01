@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
 use Webkul\Telesales\Http\Requests\IncomingLeadRequest;
+use Webkul\Telesales\Models\SourceConnection;
 use Webkul\Telesales\Services\IncomingLeadService;
 
 class IncomingLeadController extends Controller
@@ -14,9 +15,27 @@ class IncomingLeadController extends Controller
         IncomingLeadRequest $request,
         IncomingLeadService $service
     ): JsonResponse {
-        $result = $service->create($request->validated());
+        /** @var SourceConnection|null $connection */
+        $connection = $request->attributes->get('telesales_source_connection');
+        $input = $request->validated();
+
+        if ($connection) {
+            $input['source_id'] = $connection->source_id;
+            $input['group_id'] = $connection->group_id;
+            $input['campaign'] = $connection->campaign ?: ($input['campaign'] ?? null);
+            $input['incoming_source_id'] = $connection->id;
+        }
+
+        $result = $service->create($input, $connection?->marketing_owner_id);
+
+        if ($connection) {
+            $connection->increment('received_count');
+            $connection->update(['last_received_at' => now()]);
+        }
 
         if ($result['duplicate']) {
+            $connection?->increment('duplicate_count');
+
             return response()->json([
                 'status' => 'duplicate',
                 'message' => 'Data đã tồn tại.',
@@ -26,6 +45,7 @@ class IncomingLeadController extends Controller
                     'owner' => $result['owner'],
                     'stage' => $result['stage'],
                     'last_data_at' => $result['last_data_at'],
+                    'source_connection' => $connection?->name,
                 ],
             ], 409);
         }
@@ -33,8 +53,9 @@ class IncomingLeadController extends Controller
         Log::info('Incoming lead accepted', [
             'lead_id' => $result['lead']->id,
             'status' => $result['status'],
-            'source' => $request->input('source'),
-            'campaign' => $request->input('campaign'),
+            'source_connection_id' => $connection?->id,
+            'source' => $connection?->source_id ?: $request->input('source'),
+            'campaign' => $connection?->campaign ?: $request->input('campaign'),
         ]);
 
         return response()->json([
@@ -47,6 +68,7 @@ class IncomingLeadController extends Controller
                 'person_id' => $result['person']->id,
                 'assigned_user_id' => $result['lead']->user_id,
                 'stage' => $result['lead']->stage->name,
+                'source_connection' => $connection?->name,
             ],
         ], 201);
     }

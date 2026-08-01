@@ -34,10 +34,12 @@ return [
                 ['label' => 'Hồ sơ data đã nhập', 'route' => 'admin.telesales.created-leads.index'],
                 [
                     'label' => 'Kết nối landing - website',
-                    'route' => 'admin.settings.web_forms.index',
-                    'roles' => ['admin'],
+                    'route' => 'admin.telesales.source-connections.index',
                 ],
-                ['label' => 'Kết nối Facebook', 'status' => 'planned'],
+                [
+                    'label' => 'Kết nối Facebook/API',
+                    'route' => 'admin.telesales.source-connections.index',
+                ],
                 ['label' => 'Tiện ích Marketing', 'status' => 'planned'],
                 [
                     'label' => 'Báo cáo',

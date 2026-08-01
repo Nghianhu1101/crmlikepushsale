@@ -26,6 +26,7 @@ class LeadMeta extends Model
         'marketing_owner_id',
         'sales_owner_id',
         'marketing_group_id',
+        'incoming_source_id',
         'data_received_at',
         'assigned_at',
     ];
@@ -48,6 +49,11 @@ class LeadMeta extends Model
     public function salesOwner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sales_owner_id');
+    }
+
+    public function incomingSource(): BelongsTo
+    {
+        return $this->belongsTo(SourceConnection::class, 'incoming_source_id');
     }
 
     public function latestCallHistory(): HasOne

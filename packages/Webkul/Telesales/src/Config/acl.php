@@ -17,6 +17,18 @@ return [
         'sort' => 4,
     ],
     [
+        'key' => 'leads.create',
+        'name' => 'admin::app.acl.create',
+        'route' => [
+            'admin.telesales.source-connections.index',
+            'admin.telesales.source-connections.store',
+            'admin.telesales.source-connections.update',
+            'admin.telesales.source-connections.toggle',
+            'admin.telesales.source-connections.regenerate',
+        ],
+        'sort' => 5,
+    ],
+    [
         'key' => 'leads.view',
         'name' => 'admin::app.acl.view',
         'route' => [
