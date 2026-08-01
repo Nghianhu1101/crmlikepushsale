@@ -6,6 +6,9 @@
         ->latest()
         ->get();
     $phone = data_get($lead->person?->contact_numbers, '0.value');
+    $customerProfile = $lead->person_id
+        ? \Webkul\Telesales\Models\CustomerProfile::query()->where('person_id', $lead->person_id)->first()
+        : null;
     $telesalesProducts = \Webkul\Product\Models\Product::query()
         ->orderBy('name')
         ->get(['id', 'name', 'sku', 'price']);
@@ -24,6 +27,11 @@
     <div class="grid gap-4 md:grid-cols-2">
         <div class="space-y-2 text-sm dark:text-white">
             <h2 class="text-lg font-semibold">{{ $lead->person?->name }}</h2>
+
+            @if ($customerProfile?->customer_status === 'old')
+                <div class="inline-flex rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700">Khách hàng cũ</div>
+                <p><span class="font-medium">CSKH phụ trách:</span> {{ $meta?->careOwner?->name ?: $customerProfile?->careOwner?->name ?: 'Chưa phân bổ' }}</p>
+            @endif
 
             <p>
                 <span class="font-medium">Số điện thoại:</span>

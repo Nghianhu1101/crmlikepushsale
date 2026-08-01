@@ -13,6 +13,7 @@ class TelesalesGroup extends Model
         'group_id',
         'source_id',
         'campaign',
+        'department',
         'is_default',
         'next_position',
     ];

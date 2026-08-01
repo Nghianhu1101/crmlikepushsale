@@ -11,6 +11,7 @@ class Notification extends Model
     protected $fillable = [
         'user_id',
         'lead_id',
+        'customer_care_case_id',
         'title',
         'body',
         'available_at',
@@ -21,4 +22,9 @@ class Notification extends Model
         'available_at' => 'datetime',
         'read_at' => 'datetime',
     ];
+
+    public function careCase()
+    {
+        return $this->belongsTo(CustomerCareCase::class, 'customer_care_case_id');
+    }
 }

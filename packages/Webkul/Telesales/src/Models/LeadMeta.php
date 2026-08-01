@@ -25,8 +25,12 @@ class LeadMeta extends Model
         'created_by',
         'marketing_owner_id',
         'sales_owner_id',
+        'customer_care_owner_id',
+        'customer_care_group_id',
+        'customer_care_case_id',
         'marketing_group_id',
         'incoming_source_id',
+        'customer_type',
         'data_received_at',
         'assigned_at',
     ];
@@ -49,6 +53,16 @@ class LeadMeta extends Model
     public function salesOwner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sales_owner_id');
+    }
+
+    public function careOwner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'customer_care_owner_id');
+    }
+
+    public function careCase(): BelongsTo
+    {
+        return $this->belongsTo(CustomerCareCase::class, 'customer_care_case_id');
     }
 
     public function incomingSource(): BelongsTo

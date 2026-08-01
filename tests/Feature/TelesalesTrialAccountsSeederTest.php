@@ -29,7 +29,7 @@ it('creates repeatable trial accounts with the expected roles and sale group', f
         ->get()
         ->keyBy('email');
 
-    expect($users)->toHaveCount(4);
+    expect($users)->toHaveCount(5);
 
     foreach (TelesalesTrialAccountsSeeder::ACCOUNTS as $email => $account) {
         $user = $users->get($email);
@@ -59,8 +59,20 @@ it('creates repeatable trial accounts with the expected roles and sale group', f
         ->toBeFalse()
         ->and(TelesalesGroup::query()->where('group_id', $group->id)->value('is_default'))
         ->toBeTruthy()
-        ->and(TelesalesGroup::query()->where('is_default', true)->count())
+        ->and(TelesalesGroup::query()->where('department', 'sales')->where('is_default', true)->count())
         ->toBe(1);
+
+    $careGroup = Group::query()->where('name', 'Nhóm CSKH Demo')->firstOrFail();
+    expect($careGroup->users()->pluck('email')->all())
+        ->toBe(['cskh.demo@localhost.test'])
+        ->and(TelesalesGroup::query()
+            ->where('group_id', $careGroup->id)
+            ->where('department', 'customer_care')
+            ->value('is_default'))->toBeTruthy()
+        ->and(TelesalesGroup::query()
+            ->where('department', 'customer_care')
+            ->where('is_default', true)
+            ->count())->toBe(1);
 
     expect($users->get('marketing.demo@localhost.test')->role->permissions)
         ->toContain('leads.create', 'leads.create.quick-create');

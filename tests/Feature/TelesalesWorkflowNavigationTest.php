@@ -74,6 +74,22 @@ it('shows telesale operations to a sale without administration and marketing mod
         ->assertDontSee('6. Kế toán');
 });
 
+it('shows only customer 360 operations to the customer care department', function () {
+    $care = User::query()->where('email', 'cskh.demo@localhost.test')->firstOrFail();
+    $navigation = app(WorkflowNavigationService::class);
+
+    expect($navigation->role($care))->toBe('customer_care');
+
+    $this->actingAs($care, 'user')
+        ->get(route('admin.dashboard.index'))
+        ->assertSuccessful()
+        ->assertSee('3. Khách hàng 360')
+        ->assertSee('Chiến dịch chăm sóc')
+        ->assertSee('Tác nghiệp khách hàng cũ')
+        ->assertDontSee('2. Marketing')
+        ->assertDontSee('4. Telesale');
+});
+
 it('recognizes a team leader and exposes leader workflow without enabling unfinished reports', function () {
     $leader = User::query()
         ->where('email', 'leader.demo@localhost.test')

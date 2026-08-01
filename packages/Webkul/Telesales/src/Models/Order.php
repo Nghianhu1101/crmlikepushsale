@@ -17,6 +17,8 @@ class Order extends Model
         'person_id',
         'sales_owner_id',
         'marketing_owner_id',
+        'customer_care_owner_id',
+        'customer_care_case_id',
         'created_by',
         'customer_type',
         'status',
@@ -58,6 +60,16 @@ class Order extends Model
     public function marketingOwner()
     {
         return $this->belongsTo(User::class, 'marketing_owner_id');
+    }
+
+    public function careOwner()
+    {
+        return $this->belongsTo(User::class, 'customer_care_owner_id');
+    }
+
+    public function careCase()
+    {
+        return $this->belongsTo(CustomerCareCase::class, 'customer_care_case_id');
     }
 
     public function items()

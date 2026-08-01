@@ -34,6 +34,7 @@ class SourceConnectionController extends Controller
                 ->get(),
             'sources' => Source::query()->orderBy('name')->get(['id', 'name']),
             'groups' => TelesalesGroup::query()
+                ->where('department', 'sales')
                 ->with('group')
                 ->get()
                 ->pluck('group')

@@ -33,6 +33,8 @@ class CreatedLeadController extends Controller
                 'lead.source',
                 'marketingOwner',
                 'salesOwner',
+                'careOwner',
+                'careCase.latestHistory.user',
                 'latestCallHistory.user',
                 'latestMarketingFeedback.user',
                 'latestOrder.items',
@@ -47,7 +49,8 @@ class CreatedLeadController extends Controller
                     });
             });
         } elseif ($role === 'sale') {
-            $query->where('sales_owner_id', $user->id);
+            $query->where('sales_owner_id', $user->id)
+                ->where('customer_type', 'new');
         }
 
         $this->applyFilters($query, $filters);

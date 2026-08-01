@@ -61,14 +61,18 @@ class IncomingLeadController extends Controller
         return response()->json([
             'status' => $result['status'],
             'message' => $result['status'] === 'unassigned'
-                ? 'Data đã tạo nhưng chưa có sale hoạt động.'
-                : 'Data đã được tạo và phân sale.',
+                ? 'Data đã tạo nhưng chưa có nhân sự nhận.'
+                : ($result['customer_type'] === 'old'
+                    ? 'Khách hàng cũ đã được chuyển cho bộ phận CSKH.'
+                    : 'Data đã được tạo và phân sale.'),
             'data' => [
                 'lead_id' => $result['lead']->id,
                 'person_id' => $result['person']->id,
                 'assigned_user_id' => $result['lead']->user_id,
                 'stage' => $result['lead']->stage->name,
                 'source_connection' => $connection?->name,
+                'customer_type' => $result['customer_type'],
+                'assigned_department' => $result['customer_type'] === 'old' ? 'customer_care' : 'sales',
             ],
         ], 201);
     }

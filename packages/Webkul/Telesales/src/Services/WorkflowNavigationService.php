@@ -45,6 +45,10 @@ class WorkflowNavigationService
             return 'marketing';
         }
 
+        if (str_contains($roleName, 'cham soc') || str_contains($roleName, 'cskh')) {
+            return 'customer_care';
+        }
+
         if (str_contains($roleName, 'truong nhom') || str_contains($roleName, 'leader')) {
             return 'leader';
         }

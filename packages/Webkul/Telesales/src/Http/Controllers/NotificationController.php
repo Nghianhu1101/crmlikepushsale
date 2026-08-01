@@ -16,6 +16,13 @@ class NotificationController extends Controller
 
         $notification->update(['read_at' => now()]);
 
+        if ($notification->customer_care_case_id) {
+            return redirect()->route(
+                'admin.telesales.customer-care.cases.show',
+                $notification->customer_care_case_id
+            );
+        }
+
         return redirect()->route('admin.leads.view', $notification->lead_id);
     }
 }

@@ -2,6 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use Webkul\Telesales\Http\Controllers\CreatedLeadController;
+use Webkul\Telesales\Http\Controllers\CustomerCareCampaignController;
+use Webkul\Telesales\Http\Controllers\CustomerCareCaseController;
+use Webkul\Telesales\Http\Controllers\CustomerProfileController;
 use Webkul\Telesales\Http\Controllers\GroupConfigurationController;
 use Webkul\Telesales\Http\Controllers\MarketingMappingController;
 use Webkul\Telesales\Http\Controllers\NotificationController;
@@ -34,6 +37,27 @@ Route::delete('marketing-mappings/{mapping}', [MarketingMappingController::class
 
 Route::get('created-leads', CreatedLeadController::class)
     ->name('admin.telesales.created-leads.index');
+
+Route::get('customers', [CustomerProfileController::class, 'index'])
+    ->name('admin.telesales.customers.index');
+
+Route::get('customer-care/campaigns', [CustomerCareCampaignController::class, 'index'])
+    ->name('admin.telesales.customer-care.campaigns.index');
+
+Route::post('customer-care/campaigns', [CustomerCareCampaignController::class, 'store'])
+    ->name('admin.telesales.customer-care.campaigns.store');
+
+Route::get('customer-care/cases', [CustomerCareCaseController::class, 'index'])
+    ->name('admin.telesales.customer-care.cases.index');
+
+Route::get('customer-care/cases/{careCase}', [CustomerCareCaseController::class, 'show'])
+    ->name('admin.telesales.customer-care.cases.show');
+
+Route::post('customer-care/cases/{careCase}/outcome', [CustomerCareCaseController::class, 'outcome'])
+    ->name('admin.telesales.customer-care.cases.outcome');
+
+Route::post('customer-care/cases/{careCase}/orders', [CustomerCareCaseController::class, 'order'])
+    ->name('admin.telesales.customer-care.cases.order');
 
 Route::get('source-connections', [SourceConnectionController::class, 'index'])
     ->name('admin.telesales.source-connections.index');

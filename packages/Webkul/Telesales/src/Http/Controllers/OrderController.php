@@ -22,12 +22,14 @@ class OrderController extends Controller
     {
         $user = auth()->guard('user')->user();
         $role = $this->accessService->role($user);
-        $query = Order::query()->with(['lead.person', 'items', 'salesOwner', 'marketingOwner'])->latest();
+        $query = Order::query()->with(['lead.person', 'items', 'salesOwner', 'marketingOwner', 'careOwner'])->latest();
 
         if ($role === 'marketing') {
             $query->where('marketing_owner_id', $user->id);
         } elseif ($role === 'sale') {
             $query->where('sales_owner_id', $user->id);
+        } elseif ($role === 'customer_care') {
+            $query->where('customer_care_owner_id', $user->id);
         }
 
         if ($status = request('status')) {
@@ -99,6 +101,10 @@ class OrderController extends Controller
         }
 
         if ($role === 'sale' && $order->sales_owner_id === $user->id) {
+            return;
+        }
+
+        if ($role === 'customer_care' && $order->customer_care_owner_id === $user->id) {
             return;
         }
 

@@ -38,6 +38,11 @@ class TelesalesTrialAccountsSeeder extends Seeder
             'role' => 'Trưởng nhóm sale',
             'view_permission' => 'group',
         ],
+        'cskh.demo@localhost.test' => [
+            'name' => 'CSKH Demo',
+            'role' => 'Chăm sóc khách hàng',
+            'view_permission' => 'individual',
+        ],
     ];
 
     public function run(): void
@@ -108,12 +113,32 @@ class TelesalesTrialAccountsSeeder extends Seeder
             }
 
             TelesalesGroup::query()
+                ->where('department', 'sales')
                 ->where('group_id', '!=', $group->id)
                 ->update(['is_default' => false]);
 
             TelesalesGroup::query()->updateOrCreate(
                 ['group_id' => $group->id],
-                ['is_default' => true]
+                ['department' => 'sales', 'is_default' => true]
+            );
+
+            $careGroup = Group::query()->firstOrCreate(
+                ['name' => 'Nhóm CSKH Demo'],
+                ['description' => 'Bộ phận CSKH độc lập dùng để nghiệm thu chăm sóc khách hàng cũ.']
+            );
+            $careUser = $users['cskh.demo@localhost.test'];
+            $careGroup->users()->syncWithoutDetaching([$careUser->id]);
+            GroupMember::query()->updateOrCreate(
+                ['group_id' => $careGroup->id, 'user_id' => $careUser->id],
+                ['receives_data' => true, 'position' => 1]
+            );
+            TelesalesGroup::query()
+                ->where('department', 'customer_care')
+                ->where('group_id', '!=', $careGroup->id)
+                ->update(['is_default' => false]);
+            TelesalesGroup::query()->updateOrCreate(
+                ['group_id' => $careGroup->id],
+                ['department' => 'customer_care', 'is_default' => true]
             );
         });
     }

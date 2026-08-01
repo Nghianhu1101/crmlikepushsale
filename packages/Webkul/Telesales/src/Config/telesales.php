@@ -39,4 +39,12 @@ return [
         'no_demand' => 'Không có nhu cầu',
         'won' => 'Đã chốt đơn',
     ],
+
+    'customer_care_statuses' => [
+        'pending' => 'Chưa chăm sóc',
+        'contacted' => 'Đang chăm sóc',
+        'callback' => 'Hẹn gọi lại',
+        'converted' => 'Đã mua lại',
+        'completed' => 'Đã hoàn thành',
+    ],
 ];

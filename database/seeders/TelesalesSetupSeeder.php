@@ -41,11 +41,37 @@ class TelesalesSetupSeeder extends Seeder
             );
         }
 
-        $hasDefaultGroup = TelesalesGroup::query()->where('is_default', true)->exists();
+        $hasDefaultGroup = TelesalesGroup::query()
+            ->where('department', 'sales')
+            ->where('is_default', true)
+            ->exists();
 
         TelesalesGroup::query()->firstOrCreate(
             ['group_id' => $group->id],
-            ['is_default' => ! $hasDefaultGroup]
+            ['department' => 'sales', 'is_default' => ! $hasDefaultGroup]
+        );
+
+        $careGroup = Group::query()->firstOrCreate(
+            ['name' => 'CSKH mặc định'],
+            ['description' => 'Nhóm Chăm sóc khách hàng nhận ca sau bán và khách quay lại.']
+        );
+
+        if ($admin) {
+            $careGroup->users()->syncWithoutDetaching([$admin->id]);
+            GroupMember::query()->firstOrCreate(
+                ['group_id' => $careGroup->id, 'user_id' => $admin->id],
+                ['receives_data' => true, 'position' => 1]
+            );
+        }
+
+        $hasDefaultCareGroup = TelesalesGroup::query()
+            ->where('department', 'customer_care')
+            ->where('is_default', true)
+            ->exists();
+
+        TelesalesGroup::query()->firstOrCreate(
+            ['group_id' => $careGroup->id],
+            ['department' => 'customer_care', 'is_default' => ! $hasDefaultCareGroup]
         );
     }
 
@@ -70,6 +96,12 @@ class TelesalesSetupSeeder extends Seeder
                 'leads',
                 'leads.create',
                 'leads.create.quick-create',
+                'leads.view',
+                'leads.edit',
+            ],
+            'Chăm sóc khách hàng' => [
+                'dashboard',
+                'leads',
                 'leads.view',
                 'leads.edit',
             ],

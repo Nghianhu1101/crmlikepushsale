@@ -6,6 +6,7 @@
         'marketing' => 'Marketing',
         'sale' => 'Sale',
         'leader' => 'Trưởng nhóm',
+        'customer_care' => 'Chăm sóc khách hàng',
     ];
 @endphp
 

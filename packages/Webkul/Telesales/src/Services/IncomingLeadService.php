@@ -13,6 +13,7 @@ use Webkul\Lead\Models\Product as LeadProduct;
 use Webkul\Lead\Models\Source;
 use Webkul\Lead\Models\Stage;
 use Webkul\Telesales\Models\Assignment;
+use Webkul\Telesales\Models\CustomerCareCase;
 use Webkul\Telesales\Models\GroupMember;
 use Webkul\Telesales\Models\LeadMeta;
 use Webkul\Telesales\Models\MarketingMapping;
@@ -25,7 +26,9 @@ class IncomingLeadService
 {
     public function __construct(
         protected PhoneNormalizer $phoneNormalizer,
-        protected AttributeValueRepository $attributeValueRepository
+        protected AttributeValueRepository $attributeValueRepository,
+        protected CustomerProfileService $customerProfileService,
+        protected CustomerCareService $customerCareService
     ) {}
 
     /**
@@ -51,25 +54,53 @@ class IncomingLeadService
                     ->where('normalized_phone', $phone)
                     ->lockForUpdate()
                     ->first();
+                $customerType = 'new';
+                $profile = null;
 
                 if ($person) {
-                    $leadId = $person->leads()->latest()->value('id');
+                    $profile = $this->customerProfileService->sync($person);
 
-                    return $this->duplicateResult($leadId, 'phone', $person->id);
+                    if ($profile->customer_status !== 'old') {
+                        $leadId = $person->leads()->latest()->value('id');
+
+                        return $this->duplicateResult($leadId, 'phone', $person->id);
+                    }
+
+                    $activeCareCase = CustomerCareCase::query()
+                        ->where('person_id', $person->id)
+                        ->whereIn('status', ['pending', 'contacted', 'callback'])
+                        ->latest('id')
+                        ->first();
+
+                    if ($activeCareCase) {
+                        return $this->duplicateResult(
+                            $activeCareCase->lead_id ?: $person->leads()->latest()->value('id'),
+                            'active_customer_care',
+                            $person->id
+                        );
+                    }
+
+                    $customerType = 'old';
                 }
 
                 $source = $this->resolveSource($input);
-                [$groupId, $ownerId, $warning] = $this->allocate(
-                    $input['group_id'] ?? null,
-                    $source?->id,
-                    $input['campaign'] ?? null,
-                    $createdBy
-                );
                 [$marketingOwnerId, $marketingGroupId] = $this->resolveMarketingOwner(
                     $input,
                     $source?->id,
                     $createdBy
                 );
+                $lastSalesOwnerId = $profile?->last_sales_owner_id;
+
+                if ($customerType === 'new') {
+                    [$groupId, $ownerId, $warning] = $this->allocate(
+                        $input['group_id'] ?? null,
+                        $source?->id,
+                        $input['campaign'] ?? null,
+                        $createdBy
+                    );
+                } else {
+                    [$groupId, $ownerId, $warning] = [null, null, null];
+                }
 
                 $pipeline = Pipeline::query()->where('is_default', true)->first()
                     ?: Pipeline::query()->firstOrFail();
@@ -81,24 +112,27 @@ class IncomingLeadService
                     ?: $pipeline->stages()->firstOrFail();
 
                 $name = trim((string) ($input['name'] ?? ''));
-                $name = $name ?: 'Khách '.substr($phone, -4);
+                $name = $name ?: ($person?->name ?: 'Khách '.substr($phone, -4));
                 $productInterest = trim((string) ($input['product'] ?? ''));
                 $titleTail = $productInterest ?: $name;
-                $uniqueOwnerId = $ownerId ?: $createdBy ?: 0;
 
-                $personData = [
-                    'name' => $name,
-                    'emails' => [],
-                    'contact_numbers' => [[
-                        'value' => $phone,
-                        'label' => 'work',
-                    ]],
-                    'normalized_phone' => $phone,
-                    'unique_id' => $uniqueOwnerId.'|'.$phone,
-                    'user_id' => $ownerId,
-                ];
+                if (! $person) {
+                    $uniqueOwnerId = $ownerId ?: $createdBy ?: 0;
+                    $personData = [
+                        'name' => $name,
+                        'emails' => [],
+                        'contact_numbers' => [[
+                            'value' => $phone,
+                            'label' => 'work',
+                        ]],
+                        'normalized_phone' => $phone,
+                        'unique_id' => $uniqueOwnerId.'|'.$phone,
+                        'user_id' => $ownerId,
+                    ];
 
-                $person = Person::query()->create($personData);
+                    $person = Person::query()->create($personData);
+                    $this->saveAttributeValues('persons', $person->id, $personData);
+                }
 
                 $leadData = [
                     'title' => '['.$phone.'] - '.$titleTail,
@@ -133,10 +167,9 @@ class IncomingLeadService
                     ]);
                 }
 
-                $this->saveAttributeValues('persons', $person->id, $personData);
                 $this->saveAttributeValues('leads', $lead->id, $leadData);
 
-                LeadMeta::query()->create([
+                $meta = LeadMeta::query()->create([
                     'lead_id' => $lead->id,
                     'external_id' => $input['external_id'] ?? null,
                     'marketing_external_id' => $input['marketing_external_id'] ?? null,
@@ -148,12 +181,46 @@ class IncomingLeadService
                     'assigned_user_id' => $ownerId,
                     'created_by' => $createdBy,
                     'marketing_owner_id' => $marketingOwnerId,
-                    'sales_owner_id' => $ownerId,
+                    'sales_owner_id' => $customerType === 'old' ? $lastSalesOwnerId : $ownerId,
                     'marketing_group_id' => $marketingGroupId,
                     'incoming_source_id' => $input['incoming_source_id'] ?? null,
+                    'customer_type' => $customerType,
                     'data_received_at' => now(),
                     'assigned_at' => $ownerId ? now() : null,
                 ]);
+
+                if ($customerType === 'old') {
+                    $careResult = $this->customerCareService->open($person, [
+                        'lead_id' => $lead->id,
+                        'marketing_owner_id' => $marketingOwnerId,
+                        'sales_owner_id' => $lastSalesOwnerId,
+                        'case_type' => 'returning_data',
+                        'product_interest' => $productInterest ?: null,
+                        'message' => $input['message'] ?? null,
+                        'data_received_at' => now(),
+                    ]);
+                    $careCase = $careResult['case'];
+                    $groupId = $careCase->group_id;
+                    $ownerId = $careCase->care_owner_id;
+                    $warning = $careResult['warning'];
+                    $stageCode = $ownerId ? 'new' : 'unassigned';
+                    $stage = Stage::query()
+                        ->where('lead_pipeline_id', $pipeline->id)
+                        ->where('code', $stageCode)
+                        ->first() ?: $stage;
+                    $lead->update([
+                        'user_id' => $ownerId,
+                        'lead_pipeline_stage_id' => $stage->id,
+                    ]);
+                    $meta->update([
+                        'allocation_status' => $ownerId ? 'assigned' : 'unassigned',
+                        'assigned_user_id' => $ownerId,
+                        'customer_care_owner_id' => $ownerId,
+                        'customer_care_group_id' => $groupId,
+                        'customer_care_case_id' => $careCase->id,
+                        'assigned_at' => $ownerId ? now() : null,
+                    ]);
+                }
 
                 Assignment::query()->create([
                     'lead_id' => $lead->id,
@@ -163,7 +230,7 @@ class IncomingLeadService
                     'assigned_at' => now(),
                 ]);
 
-                if ($ownerId) {
+                if ($ownerId && $customerType === 'new') {
                     Notification::query()->create([
                         'user_id' => $ownerId,
                         'lead_id' => $lead->id,
@@ -177,12 +244,21 @@ class IncomingLeadService
                     ]);
                 }
 
+                $this->customerProfileService->recordIncomingLead(
+                    $lead,
+                    $marketingOwnerId,
+                    $customerType === 'old' ? $lastSalesOwnerId : $ownerId,
+                    $customerType,
+                    $customerType === 'old' ? $ownerId : null
+                );
+
                 return [
                     'status' => $ownerId ? 'created' : 'unassigned',
                     'duplicate' => false,
                     'lead' => $lead->fresh(['person', 'stage', 'user']),
                     'person' => $person,
                     'warning' => $warning,
+                    'customer_type' => $customerType,
                 ];
             }, 3);
         } catch (QueryException $exception) {
@@ -223,6 +299,7 @@ class IncomingLeadService
         if ($requestedGroupId) {
             $configuration = TelesalesGroup::query()
                 ->where('group_id', $requestedGroupId)
+                ->where('department', 'sales')
                 ->lockForUpdate()
                 ->first();
         }
@@ -230,6 +307,7 @@ class IncomingLeadService
         if (! $configuration && $campaign) {
             $configuration = TelesalesGroup::query()
                 ->where('campaign', $campaign)
+                ->where('department', 'sales')
                 ->lockForUpdate()
                 ->first();
         }
@@ -237,11 +315,13 @@ class IncomingLeadService
         if (! $configuration && $sourceId) {
             $configuration = TelesalesGroup::query()
                 ->where('source_id', $sourceId)
+                ->where('department', 'sales')
                 ->lockForUpdate()
                 ->first();
         }
 
         $configuration ??= TelesalesGroup::query()
+            ->where('department', 'sales')
             ->where('is_default', true)
             ->lockForUpdate()
             ->first();

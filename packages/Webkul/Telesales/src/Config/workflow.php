@@ -55,25 +55,26 @@ return [
             'number' => 3,
             'label' => 'Khách hàng 360',
             'icon' => 'icon-contact',
-            'roles' => ['admin', 'marketing', 'sale', 'leader'],
+            'roles' => ['admin', 'marketing', 'sale', 'leader', 'customer_care'],
             'children' => [
                 [
-                    'label' => 'Hồ sơ khách hàng',
-                    'route' => 'admin.contacts.persons.index',
-                    'routes' => [
-                        'marketing' => 'admin.telesales.created-leads.index',
-                        'sale' => 'admin.telesales.created-leads.index',
-                        'leader' => 'admin.telesales.created-leads.index',
-                    ],
+                    'label' => 'Quản lý khách hàng 360',
+                    'route' => 'admin.telesales.customers.index',
+                ],
+                [
+                    'label' => 'Chiến dịch chăm sóc',
+                    'route' => 'admin.telesales.customer-care.campaigns.index',
+                    'roles' => ['admin', 'customer_care'],
+                ],
+                [
+                    'label' => 'Tác nghiệp khách hàng cũ',
+                    'route' => 'admin.telesales.customer-care.cases.index',
+                    'roles' => ['admin', 'customer_care'],
                 ],
                 [
                     'label' => 'Lịch sử chăm sóc',
-                    'route' => 'admin.activities.index',
-                    'routes' => [
-                        'marketing' => 'admin.telesales.created-leads.index',
-                        'sale' => 'admin.telesales.created-leads.index',
-                        'leader' => 'admin.telesales.created-leads.index',
-                    ],
+                    'route' => 'admin.telesales.customer-care.cases.index',
+                    'roles' => ['admin', 'customer_care'],
                 ],
                 [
                     'label' => 'Doanh nghiệp',

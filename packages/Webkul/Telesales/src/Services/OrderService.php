@@ -6,12 +6,18 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Webkul\Lead\Models\Lead;
 use Webkul\Product\Models\Product;
+use Webkul\Telesales\Models\CustomerCareCase;
 use Webkul\Telesales\Models\LeadMeta;
 use Webkul\Telesales\Models\Order;
 use Webkul\Telesales\Models\OrderItem;
 
 class OrderService
 {
+    public function __construct(
+        protected CustomerProfileService $customerProfileService,
+        protected CustomerCareService $customerCareService
+    ) {}
+
     public function create(Lead $lead, array $data, int $actorId): Order
     {
         return DB::transaction(function () use ($lead, $data, $actorId) {
@@ -44,7 +50,9 @@ class OrderService
                 'sales_owner_id' => $meta?->sales_owner_id ?: $lead->user_id,
                 'marketing_owner_id' => $meta?->marketing_owner_id,
                 'created_by' => $actorId,
-                'customer_type' => $hasPreviousOrder ? 'old' : 'new',
+                'customer_care_owner_id' => $data['customer_care_owner_id'] ?? null,
+                'customer_care_case_id' => $data['customer_care_case_id'] ?? null,
+                'customer_type' => $hasPreviousOrder || ! empty($data['customer_care_case_id']) ? 'old' : 'new',
                 'status' => $status,
                 'delivery_status' => $deliveryStatus,
                 'gross_amount' => $grossAmount,
@@ -76,6 +84,30 @@ class OrderService
                 }
             }
 
+            if ($isRevenueStatus) {
+                $this->customerProfileService->sync($lead->person_id);
+
+                if (! empty($data['customer_care_case_id'])) {
+                    CustomerCareCase::query()
+                        ->whereKey($data['customer_care_case_id'])
+                        ->update([
+                            'status' => 'converted',
+                            'result' => 'won',
+                            'completed_at' => now(),
+                        ]);
+                } else {
+                    $this->customerCareService->open($lead->person, [
+                        'lead_id' => $lead->id,
+                        'origin_order_id' => $order->id,
+                        'marketing_owner_id' => $order->marketing_owner_id,
+                        'sales_owner_id' => $order->sales_owner_id,
+                        'case_type' => 'post_sale',
+                        'product_interest' => $product->name ?: $product->sku,
+                        'message' => 'Chăm sóc sau bán và chuẩn bị chu kỳ mua lại.',
+                    ]);
+                }
+            }
+
             return $order->load(['items', 'lead.person', 'salesOwner', 'marketingOwner']);
         }, 3);
     }
@@ -84,6 +116,8 @@ class OrderService
     {
         return DB::transaction(function () use ($order, $status, $deliveryStatus) {
             $order = Order::query()->lockForUpdate()->findOrFail($order->id);
+            $wasRevenueStatus = in_array($order->status, config('telesales.revenue_statuses'), true)
+                && ! in_array($order->delivery_status, ['returned', 'cancelled'], true);
             $status = in_array($deliveryStatus, ['returned', 'cancelled'], true)
                 ? 'returned'
                 : $status;
@@ -97,6 +131,20 @@ class OrderService
                     ? ($order->revenue_confirmed_at ?: now())
                     : $order->revenue_confirmed_at,
             ]);
+
+            $this->customerProfileService->sync($order->person_id);
+
+            if ($isRevenueStatus && ! $wasRevenueStatus && ! $order->customer_care_case_id) {
+                $this->customerCareService->open($order->person, [
+                    'lead_id' => $order->lead_id,
+                    'origin_order_id' => $order->id,
+                    'marketing_owner_id' => $order->marketing_owner_id,
+                    'sales_owner_id' => $order->sales_owner_id,
+                    'case_type' => 'post_sale',
+                    'product_interest' => $order->items()->latest()->value('product_name'),
+                    'message' => 'Chăm sóc sau bán và chuẩn bị chu kỳ mua lại.',
+                ]);
+            }
 
             return $order->fresh();
         }, 3);

@@ -9,7 +9,7 @@
                 <div>
                     <div class="text-xl font-bold dark:text-white">Cấu hình phân data telesale</div>
                     <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                        Thành viên được lấy từ nhóm người dùng Krayin. Bật những sale được nhận data và đặt thứ tự chia vòng.
+                        Thành viên được lấy từ nhóm người dùng Krayin. Mỗi nhóm thuộc riêng bộ phận Sale hoặc CSKH và có vòng chia độc lập.
                     </p>
                 </div>
                 <a href="{{ route('admin.telesales.marketing-mappings.index') }}" class="secondary-button">Ánh xạ Marketing</a>
@@ -44,7 +44,14 @@
                     </label>
                 </div>
 
-                <div class="mb-4 grid gap-4 md:grid-cols-2">
+                <div class="mb-4 grid gap-4 md:grid-cols-3">
+                    <label class="grid gap-1 text-sm dark:text-white">
+                        <span>Bộ phận nhận data</span>
+                        <select name="department" class="custom-select w-full rounded-md border px-3 py-2 dark:border-gray-800 dark:bg-gray-900">
+                            <option value="sales" @selected(($configuration?->department ?? 'sales') === 'sales')>Telesale</option>
+                            <option value="customer_care" @selected($configuration?->department === 'customer_care')>Chăm sóc khách hàng</option>
+                        </select>
+                    </label>
                     <label class="grid gap-1 text-sm dark:text-white">
                         <span>Nguồn data áp dụng</span>
                         <select name="source_id" class="custom-select w-full rounded-md border px-3 py-2 dark:border-gray-800 dark:bg-gray-900">
@@ -73,7 +80,7 @@
                     <table class="w-full min-w-[520px] text-left text-sm dark:text-white">
                         <thead class="bg-gray-50 dark:bg-gray-950">
                             <tr>
-                                <th class="p-3">Sale</th>
+                                <th class="p-3">Nhân sự Sale / CSKH</th>
                                 <th class="p-3">Đang hoạt động</th>
                                 <th class="p-3">Nhận data</th>
                                 <th class="p-3">Thứ tự</th>

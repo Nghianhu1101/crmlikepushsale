@@ -19,12 +19,19 @@ class LeadOwnershipObserver
         $newOwnerId = $lead->user_id;
         $meta = LeadMeta::query()->where('lead_id', $lead->id)->first();
 
-        if (! $meta || (int) $meta->sales_owner_id === (int) $newOwnerId) {
+        if (! $meta) {
+            return;
+        }
+
+        $isCustomerCareLead = $meta->customer_type === 'old';
+        $ownerColumn = $isCustomerCareLead ? 'customer_care_owner_id' : 'sales_owner_id';
+
+        if ((int) $meta->{$ownerColumn} === (int) $newOwnerId) {
             return;
         }
 
         $meta->update([
-            'sales_owner_id' => $newOwnerId,
+            $ownerColumn => $newOwnerId,
             'assigned_user_id' => $newOwnerId,
             'assigned_at' => now(),
             'allocation_status' => $newOwnerId ? 'assigned' : 'unassigned',
@@ -32,7 +39,7 @@ class LeadOwnershipObserver
 
         Assignment::query()->create([
             'lead_id' => $lead->id,
-            'group_id' => $meta->group_id,
+            'group_id' => $isCustomerCareLead ? $meta->customer_care_group_id : $meta->group_id,
             'user_id' => $newOwnerId,
             'source_id' => $lead->lead_source_id,
             'assigned_at' => now(),
@@ -41,10 +48,12 @@ class LeadOwnershipObserver
         OwnershipAudit::query()->create([
             'lead_id' => $lead->id,
             'actor_id' => auth()->guard('user')->id(),
-            'owner_type' => 'sales',
+            'owner_type' => $isCustomerCareLead ? 'customer_care' : 'sales',
             'old_user_id' => $oldOwnerId,
             'new_user_id' => $newOwnerId,
-            'reason' => 'Thay đổi người phụ trách Lead',
+            'reason' => $isCustomerCareLead
+                ? 'Thay đổi nhân sự Chăm sóc khách hàng'
+                : 'Thay đổi người phụ trách Lead',
             'changed_at' => now(),
         ]);
     }

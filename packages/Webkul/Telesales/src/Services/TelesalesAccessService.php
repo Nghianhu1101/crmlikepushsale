@@ -2,6 +2,7 @@
 
 namespace Webkul\Telesales\Services;
 
+use Illuminate\Support\Str;
 use Webkul\User\Models\User;
 
 class TelesalesAccessService
@@ -12,8 +13,14 @@ class TelesalesAccessService
             return 'admin';
         }
 
-        if (str_contains(mb_strtolower((string) $user->role?->name), 'marketing')) {
+        $roleName = Str::lower(Str::ascii((string) $user->role?->name));
+
+        if (str_contains($roleName, 'marketing')) {
             return 'marketing';
+        }
+
+        if (str_contains($roleName, 'cham soc') || str_contains($roleName, 'cskh')) {
+            return 'customer_care';
         }
 
         return 'sale';
