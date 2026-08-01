@@ -1,6 +1,14 @@
 <x-admin::layouts>
+    @php
+        $isSaleProfile = $role === 'sale';
+        $profileTitle = $isSaleProfile ? 'Tác nghiệp Telesale' : 'Hồ sơ khách hàng Marketing';
+        $profileDescription = $isSaleProfile
+            ? 'Danh sách data được giao cho bạn. Gọi khách, cập nhật kết quả và theo dõi đơn hàng trên cùng một màn hình.'
+            : 'Theo dõi data từ lúc Marketing tiếp nhận đến khi Sale chăm sóc và tạo đơn.';
+    @endphp
+
     <x-slot:title>
-        Hồ sơ khách hàng Marketing
+        {{ $profileTitle }}
     </x-slot>
 
     @pushOnce('styles')
@@ -82,9 +90,9 @@
     <div class="flex flex-col gap-4">
         <div class="scroll-reactive-sticky sticky top-[60px] z-[1000] flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <div>
-                <div class="text-xl font-bold dark:text-white">Hồ sơ khách hàng Marketing</div>
+                <div class="text-xl font-bold dark:text-white">{{ $profileTitle }}</div>
                 <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                    Theo dõi data từ lúc Marketing tiếp nhận đến khi Sale chăm sóc và tạo đơn.
+                    {{ $profileDescription }}
                 </p>
             </div>
 
@@ -92,7 +100,9 @@
                 <span class="rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-200">
                     {{ $records->total() }} data
                 </span>
-                <a href="{{ route('admin.leads.create') }}" class="primary-button">Thêm data</a>
+                @unless ($isSaleProfile)
+                    <a href="{{ route('admin.leads.create') }}" class="primary-button">Thêm data</a>
+                @endunless
             </div>
         </div>
 
@@ -113,12 +123,18 @@
                     @endforeach
                 </select>
 
-                <select name="sales_owner_id" class="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-950 dark:text-white">
-                    <option value="">Tất cả Sale</option>
-                    @foreach ($salesOwners as $sale)
-                        <option value="{{ $sale->id }}" @selected((int) ($filters['sales_owner_id'] ?? 0) === $sale->id)>{{ $sale->name }}</option>
-                    @endforeach
-                </select>
+                @unless ($isSaleProfile)
+                    <select name="sales_owner_id" class="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-950 dark:text-white">
+                        <option value="">Tất cả Sale</option>
+                        @foreach ($salesOwners as $sale)
+                            <option value="{{ $sale->id }}" @selected((int) ($filters['sales_owner_id'] ?? 0) === $sale->id)>{{ $sale->name }}</option>
+                        @endforeach
+                    </select>
+                @else
+                    <div class="flex items-center rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+                        Data của tôi · {{ auth()->guard('user')->user()->name }}
+                    </div>
+                @endunless
 
                 <select name="stage_id" class="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-950 dark:text-white">
                     <option value="">Tất cả trạng thái</option>
@@ -189,6 +205,18 @@
                                 @if ($role === 'marketing')
                                     <div class="mt-1 text-xs text-gray-500">Số được ẩn theo quyền Marketing</div>
                                 @endif
+
+                                @if ($isSaleProfile && $phone)
+                                    <div class="mt-3 flex flex-wrap gap-2">
+                                        <a href="tel:{{ $phone }}" class="inline-flex items-center gap-1 rounded-md bg-green-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-green-700">
+                                            <span class="icon-call" aria-hidden="true"></span>
+                                            Gọi ngay
+                                        </a>
+                                        <a href="{{ route('admin.leads.view', $record->lead_id) }}" class="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100">
+                                            Tác nghiệp
+                                        </a>
+                                    </div>
+                                @endif
                             </td>
 
                             <td>
@@ -220,11 +248,17 @@
                                         {{ config('telesales.call_results.'.$history->result, $history->result) }}
                                     </div>
 
-                                    <div class="marketing-profile-message mt-2 text-orange-600 dark:text-orange-300">
-                                        {{ $feedback?->marketing_feedback ?: 'Sale chưa gửi phản hồi cho Marketing.' }}
-                                    </div>
+                                    @if ($isSaleProfile)
+                                        <div class="marketing-profile-message mt-2 text-gray-700 dark:text-gray-200">
+                                            {{ $history->note ?: 'Chưa có ghi chú chăm sóc.' }}
+                                        </div>
+                                    @else
+                                        <div class="marketing-profile-message mt-2 text-orange-600 dark:text-orange-300">
+                                            {{ $feedback?->marketing_feedback ?: 'Sale chưa gửi phản hồi cho Marketing.' }}
+                                        </div>
+                                    @endif
 
-                                    @if ($feedback)
+                                    @if (! $isSaleProfile && $feedback)
                                         <div class="mt-1 text-xs text-gray-500">
                                             {{ $feedback->user?->name }} · {{ $feedback->created_at->format('d/m/Y H:i') }}
                                         </div>

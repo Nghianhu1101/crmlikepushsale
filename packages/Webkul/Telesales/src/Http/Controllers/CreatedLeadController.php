@@ -23,7 +23,7 @@ class CreatedLeadController extends Controller
         $user = auth()->guard('user')->user();
         $role = $this->accessService->role($user);
 
-        abort_unless(in_array($role, ['admin', 'marketing'], true), 403);
+        abort_unless(in_array($role, ['admin', 'marketing', 'sale'], true), 403);
 
         $filters = $request->validated();
         $query = LeadMeta::query()
@@ -46,6 +46,8 @@ class CreatedLeadController extends Controller
                             ->where('created_by', $user->id);
                     });
             });
+        } elseif ($role === 'sale') {
+            $query->where('sales_owner_id', $user->id);
         }
 
         $this->applyFilters($query, $filters);
@@ -60,12 +62,14 @@ class CreatedLeadController extends Controller
             'role' => $role,
             'sources' => Source::query()->orderBy('name')->get(['id', 'name']),
             'stages' => Stage::query()->orderBy('sort_order')->get(['id', 'name']),
-            'salesOwners' => User::query()
-                ->with('role')
-                ->where('status', true)
-                ->orderBy('name')
-                ->get()
-                ->reject(fn (User $candidate) => str_contains(mb_strtolower((string) $candidate->role?->name), 'marketing')),
+            'salesOwners' => $role === 'sale'
+                ? collect([$user])
+                : User::query()
+                    ->with('role')
+                    ->where('status', true)
+                    ->orderBy('name')
+                    ->get()
+                    ->reject(fn (User $candidate) => str_contains(mb_strtolower((string) $candidate->role?->name), 'marketing')),
         ]);
     }
 

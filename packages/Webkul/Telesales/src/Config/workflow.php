@@ -62,8 +62,8 @@ return [
                     'route' => 'admin.contacts.persons.index',
                     'routes' => [
                         'marketing' => 'admin.telesales.created-leads.index',
-                        'sale' => 'admin.leads.index',
-                        'leader' => 'admin.leads.index',
+                        'sale' => 'admin.telesales.created-leads.index',
+                        'leader' => 'admin.telesales.created-leads.index',
                     ],
                 ],
                 [
@@ -71,8 +71,8 @@ return [
                     'route' => 'admin.activities.index',
                     'routes' => [
                         'marketing' => 'admin.telesales.created-leads.index',
-                        'sale' => 'admin.leads.index',
-                        'leader' => 'admin.leads.index',
+                        'sale' => 'admin.telesales.created-leads.index',
+                        'leader' => 'admin.telesales.created-leads.index',
                     ],
                 ],
                 [
@@ -90,8 +90,8 @@ return [
             'icon' => 'icon-call',
             'roles' => ['admin', 'sale', 'leader'],
             'children' => [
-                ['label' => 'Tác nghiệp telesale', 'route' => 'admin.leads.index'],
-                ['label' => 'Hồ sơ khách hàng', 'route' => 'admin.leads.index'],
+                ['label' => 'Tác nghiệp telesale', 'route' => 'admin.telesales.created-leads.index'],
+                ['label' => 'Hồ sơ khách hàng', 'route' => 'admin.telesales.created-leads.index'],
                 ['label' => 'Bảng xếp hạng', 'route' => 'admin.telesales.rankings.index'],
                 ['label' => 'Đơn telesale', 'route' => 'admin.telesales.orders.index'],
                 ['label' => 'Kho số thả nổi', 'status' => 'planned'],

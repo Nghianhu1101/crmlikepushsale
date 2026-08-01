@@ -165,3 +165,38 @@ it('assigns two new leads alternately and creates notifications for both demo sa
                 ->exists())->toBeTrue();
     }
 });
+
+it('shows sale a marketing-style table containing only assigned customer data', function () {
+    $this->seed(TelesalesTrialAccountsSeeder::class);
+
+    $marketing = User::query()->where('email', 'marketing.demo@localhost.test')->firstOrFail();
+    $sale1 = User::query()->where('email', 'sale1.demo@localhost.test')->firstOrFail();
+    $group = Group::query()->where('name', 'Nhóm Sale Demo')->firstOrFail();
+    $configuration = TelesalesGroup::query()->where('group_id', $group->id)->firstOrFail();
+    $configuration->update(['next_position' => 0]);
+    $phoneForSale1 = '093'.random_int(1000000, 9999999);
+    $phoneForSale2 = '092'.random_int(1000000, 9999999);
+    $service = app(IncomingLeadService::class);
+
+    $service->create([
+        'phone' => $phoneForSale1,
+        'name' => 'Khách riêng của Sale Demo 1',
+        'group_id' => $group->id,
+    ], $marketing->id);
+    $service->create([
+        'phone' => $phoneForSale2,
+        'name' => 'Khách riêng của Sale Demo 2',
+        'group_id' => $group->id,
+    ], $marketing->id);
+
+    $this->actingAs($sale1, 'user')
+        ->get(route('admin.telesales.created-leads.index'))
+        ->assertSuccessful()
+        ->assertSee('Tác nghiệp Telesale')
+        ->assertSee('Khách riêng của Sale Demo 1')
+        ->assertSee($phoneForSale1)
+        ->assertSee('tel:'.$phoneForSale1, false)
+        ->assertSee('Data của tôi · Sale Demo 1')
+        ->assertDontSee('Khách riêng của Sale Demo 2')
+        ->assertDontSee($phoneForSale2);
+});
