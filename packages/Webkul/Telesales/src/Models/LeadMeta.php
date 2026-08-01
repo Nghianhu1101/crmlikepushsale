@@ -3,7 +3,10 @@
 namespace Webkul\Telesales\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Webkul\Lead\Models\Lead;
+use Webkul\User\Models\User;
 
 class LeadMeta extends Model
 {
@@ -32,8 +35,35 @@ class LeadMeta extends Model
         'assigned_at' => 'datetime',
     ];
 
-    public function lead()
+    public function lead(): BelongsTo
     {
         return $this->belongsTo(Lead::class);
+    }
+
+    public function marketingOwner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'marketing_owner_id');
+    }
+
+    public function salesOwner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'sales_owner_id');
+    }
+
+    public function latestCallHistory(): HasOne
+    {
+        return $this->hasOne(CallHistory::class, 'lead_id', 'lead_id')->latestOfMany();
+    }
+
+    public function latestMarketingFeedback(): HasOne
+    {
+        return $this->hasOne(CallHistory::class, 'lead_id', 'lead_id')
+            ->whereNotNull('marketing_feedback')
+            ->latestOfMany();
+    }
+
+    public function latestOrder(): HasOne
+    {
+        return $this->hasOne(Order::class, 'lead_id', 'lead_id')->latestOfMany();
     }
 }

@@ -60,6 +60,9 @@ Việc ẩn menu chỉ là lớp trải nghiệm người dùng. Quyền truy c�
 - Quản trị nhân sự, nhóm, vai trò và cấu hình hệ thống.
 - Dashboard Marketing/Sale và bảng xếp hạng.
 - Data Marketing đã nhập.
+- Hồ sơ Marketing liên kết trực tiếp với Sale phụ trách, lần chăm sóc gần nhất,
+  phản hồi được Sale chia sẻ và đơn telesale mới nhất. Số điện thoại được che
+  đối với Marketing; ghi chú nội bộ Sale không xuất hiện.
 - Web form/landing page sẵn có của Krayin.
 - Person, Organization, Activity và Lead.
 - Tác nghiệp telesale, đơn telesale và cấu hình phân data.
@@ -101,4 +104,4 @@ Các mục trên cố ý bị khóa bằng nhãn `Chưa có`. Chúng không đư
 - HTTP xác nhận thanh trên và menu theo vai trò trên server nền.
 - Playwright xác nhận desktop rộng `1440px` và mobile rộng `390px` không gây
   cuộn ngang; drawer mobile mở được, mục chưa có không sinh link.
-- Toàn bộ PHP test: `42 passed`, `245 assertions`, `0 failed`.
+- Toàn bộ PHP test: `43 passed`, `262 assertions`, `0 failed`.

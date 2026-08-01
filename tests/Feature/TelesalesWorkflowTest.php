@@ -141,24 +141,68 @@ it('lets marketing review only the data summary it created', function () {
         'group_id' => $group->id,
         'message' => 'Khách cần tư vấn sản phẩm',
     ], $marketing->id)['lead'];
+    $otherMarketing = makeTelesalesUser('Marketing khác');
+    $otherMarketing->update(['role_id' => $marketingRole->id]);
+    $otherLead = createIncomingLead([
+        'group_id' => $group->id,
+        'name' => 'Khách của Marketing khác',
+    ], $otherMarketing->id)['lead'];
+    $phone = data_get($lead->person->contact_numbers, '0.value');
+    $maskedPhone = substr($phone, 0, 4).'***'.substr($phone, -3);
 
     CallHistory::query()->create([
         'lead_id' => $lead->id,
         'user_id' => $sale->id,
         'result' => 'consulting',
         'note' => 'Ghi chú riêng của sale',
+        'marketing_feedback' => 'Khách quan tâm sản phẩm và cần gọi lại buổi chiều',
     ]);
 
     $this->actingAs($marketing, 'user')
         ->get(route('admin.telesales.created-leads.index'))
         ->assertSuccessful()
-        ->assertSee($lead->person->name);
+        ->assertSee($lead->person->name)
+        ->assertSee($sale->name)
+        ->assertSee('Khách cần tư vấn sản phẩm')
+        ->assertSee('Đang tư vấn')
+        ->assertSee('Khách quan tâm sản phẩm và cần gọi lại buổi chiều')
+        ->assertSee($maskedPhone)
+        ->assertDontSee($phone)
+        ->assertDontSee($otherLead->person->name)
+        ->assertDontSee('Ghi chú riêng của sale');
 
     $this->actingAs($marketing, 'user')
         ->get(route('admin.leads.view', $lead->id))
         ->assertSuccessful()
         ->assertSee('Khách cần tư vấn sản phẩm')
+        ->assertSee('Khách quan tâm sản phẩm và cần gọi lại buổi chiều')
+        ->assertSee($maskedPhone)
+        ->assertDontSee($phone)
         ->assertDontSee('Ghi chú riêng của sale');
+});
+
+it('stores sale feedback for marketing without exposing the internal note', function () {
+    $sale = makeTelesalesUser('Sale phản hồi Marketing');
+    $group = makeTelesalesGroup([[$sale, true]]);
+    $lead = createIncomingLead(['group_id' => $group->id])['lead'];
+
+    $this->actingAs($sale, 'user')
+        ->get(route('admin.leads.view', $lead->id))
+        ->assertSuccessful()
+        ->assertSee('Phản hồi cho Marketing');
+
+    $this->actingAs($sale, 'user')
+        ->post(route('admin.telesales.outcomes.store', $lead->id), [
+            'result' => 'consulting',
+            'note' => 'Ghi chú nội bộ không chia sẻ',
+            'marketing_feedback' => 'Data đúng nhu cầu, khách đã nghe máy',
+        ])
+        ->assertRedirect(route('admin.leads.view', $lead->id));
+
+    $history = CallHistory::query()->where('lead_id', $lead->id)->latest()->firstOrFail();
+
+    expect($history->note)->toBe('Ghi chú nội bộ không chia sẻ')
+        ->and($history->marketing_feedback)->toBe('Data đúng nhu cầu, khách đã nghe máy');
 });
 
 it('rejects the incoming lead API when its token is invalid', function () {

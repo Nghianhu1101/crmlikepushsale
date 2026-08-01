@@ -20,6 +20,7 @@ class OutcomeController extends Controller
         $data = request()->validate([
             'result' => ['required', Rule::in(array_keys(config('telesales.call_results')))],
             'note' => ['nullable', 'string', 'max:5000'],
+            'marketing_feedback' => ['nullable', 'string', 'max:5000'],
             'callback_at' => ['required_if:result,callback', 'nullable', 'date', 'after:now'],
         ]);
 
@@ -31,6 +32,7 @@ class OutcomeController extends Controller
                 'user_id' => $userId,
                 'result' => $data['result'],
                 'note' => $data['note'] ?? null,
+                'marketing_feedback' => $data['marketing_feedback'] ?? null,
                 'callback_at' => $data['callback_at'] ?? null,
             ]);
 

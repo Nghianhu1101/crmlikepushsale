@@ -57,13 +57,25 @@
                 </x-admin::form.control-group>
 
                 <x-admin::form.control-group>
-                    <x-admin::form.control-group.label>Ghi chú</x-admin::form.control-group.label>
+                    <x-admin::form.control-group.label>Ghi chú nội bộ Sale</x-admin::form.control-group.label>
                     <x-admin::form.control-group.control
                         type="textarea"
                         name="note"
                         rows="3"
-                        label="Ghi chú"
+                        label="Ghi chú nội bộ Sale"
                     />
+                </x-admin::form.control-group>
+
+                <x-admin::form.control-group>
+                    <x-admin::form.control-group.label>Phản hồi cho Marketing</x-admin::form.control-group.label>
+                    <x-admin::form.control-group.control
+                        type="textarea"
+                        name="marketing_feedback"
+                        rows="3"
+                        label="Phản hồi cho Marketing"
+                        placeholder="Thông tin Sale muốn Marketing theo dõi: nhu cầu, tình trạng khách, chất lượng data..."
+                    />
+                    <p class="mt-1 text-xs text-gray-500">Nội dung này sẽ xuất hiện trong Hồ sơ khách hàng Marketing.</p>
                 </x-admin::form.control-group>
 
                 <x-admin::form.control-group>
@@ -217,6 +229,11 @@
                         <span>{{ $history->created_at->format('d/m/Y H:i') }} · {{ $history->user?->name }}</span>
                     </div>
                     @if ($history->note)<p class="mt-1">{{ $history->note }}</p>@endif
+                    @if ($history->marketing_feedback)
+                        <p class="mt-2 rounded bg-blue-50 p-2 text-blue-700 dark:bg-blue-950 dark:text-blue-200">
+                            <strong>Đã chia sẻ Marketing:</strong> {{ $history->marketing_feedback }}
+                        </p>
+                    @endif
                     @if ($history->callback_at)<p class="mt-1 text-brandColor">Hẹn: {{ $history->callback_at->format('d/m/Y H:i') }}</p>@endif
                 </div>
             @empty

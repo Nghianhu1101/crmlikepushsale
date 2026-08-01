@@ -78,6 +78,16 @@ Không có chức năng nào trong danh sách được xác định là **hoàn 
 - Order lưu snapshot Sale/Marketing tại thời điểm tạo, nên đổi owner Lead sau đó không làm sai doanh thu lịch sử.
 - Đơn hoàn/hủy bị loại khỏi báo cáo doanh thu.
 
+### Liên kết hồ sơ Marketing với Sale
+
+- Hồ sơ Marketing hiển thị nguồn/data về, khách hàng, tin nhắn ban đầu, Sale
+  phụ trách, thời điểm phân, lần tác nghiệp gần nhất, kết quả, phản hồi chia sẻ,
+  sản phẩm, đơn hàng và trạng thái giao hàng.
+- Sale có hai vùng nội dung riêng: ghi chú nội bộ và phản hồi cho Marketing.
+  Chỉ phản hồi chia sẻ được hiển thị cho Marketing.
+- Số điện thoại được che trên danh sách và trang tóm tắt Marketing; Admin và Sale
+  vẫn dùng số đầy đủ theo phạm vi được cấp.
+
 ## 2. Chức năng chỉ có giao diện nhưng chưa có xử lý backend
 
 Không phát hiện form/nút telesale nào trong phạm vi kiểm tra chỉ có giao diện mà không có route/backend:
@@ -111,7 +121,7 @@ Các phần dễ bị hiểu nhầm là đã hoàn thiện nhưng thực tế **
 5. **Nhận diện Marketing dựa vào chuỗi tên role chứa `marketing`.** Đổi tên role hoặc dùng tên tiếng Việt khác có thể làm sai ownership/scope.
 6. **API dùng một bearer token tĩnh cho toàn hệ thống và không có rate limiter riêng.** Chưa có token theo nguồn, rotation, timestamp/signature chống replay, audit client hoặc giới hạn tốc độ.
 7. **`APP_DEBUG=true`.** Phù hợp máy local, nhưng nếu cấu hình này được đưa ra mạng có thể lộ stack trace, SQL và dữ liệu request.
-8. **Số điện thoại đầy đủ nằm trong notification body và màn hình tóm tắt Marketing.** Cần xác nhận chính sách dữ liệu cá nhân; hiện chưa có masking theo vai trò.
+8. **Số điện thoại đầy đủ vẫn nằm trong notification body của Sale.** Danh sách và trang tóm tắt Marketing đã được masking; cần tiếp tục xác nhận chính sách dữ liệu cá nhân cho notification và log.
 9. **Backfill phone chỉ xử lý số đầu tiên.** Số phụ trong JSON không được lập index; bản ghi legacy trùng bị bỏ qua và để `normalized_phone` rỗng thay vì có hàng chờ xử lý. Database hiện tại không còn giá trị null, nhưng migration vẫn rủi ro khi áp dụng trên dữ liệu khác.
 10. **Cấu hình mapping nhóm có thể mơ hồ.** Database không unique theo `source_id` hoặc `campaign` giữa nhiều nhóm; service dùng bản ghi đầu tiên nên kết quả không xác định nếu cấu hình trùng.
 
@@ -140,6 +150,7 @@ Các migration mới đều đã chạy:
 | `2026_07_29_100003_add_ownership_reporting_to_telesales_leads` | 6 | Ran |
 | `2026_07_29_100004_create_telesales_orders` | 6 | Ran |
 | `2026_07_29_100005_make_marketing_mapping_keys_unique` | 7 | Ran |
+| `2026_08_01_000000_add_marketing_feedback_to_telesales_call_histories` | 8 | Ran |
 
 Snapshot database lúc audit:
 
@@ -160,10 +171,10 @@ Lệnh đã chạy:
 
 Kết quả:
 
-- **42 test pass**
-- **245 assertion pass**
+- **43 test pass**
+- **262 assertion pass**
 - **0 fail**
-- Thời gian PHPUnit/Pest báo cáo ở lần kiểm tra gần nhất: `4.19s`
+- Thời gian PHPUnit/Pest báo cáo ở lần kiểm tra gần nhất: `4.94s`.
 
 Các nhóm pass:
 
@@ -173,6 +184,8 @@ Các nhóm pass:
 - Round-robin, tắt nhận data, chưa phân bổ.
 - Chống Sale xem/thao tác Lead của Sale khác.
 - Marketing chỉ xem phần tóm tắt data đã tạo.
+- Marketing thấy đúng Sale, kết quả và phản hồi được chia sẻ nhưng không thấy
+  ghi chú nội bộ; số điện thoại bị che và data Marketing khác bị loại khỏi scope.
 - API sai token và idempotency `external_id`.
 - Lịch sử chăm sóc, callback validation/reminder và notification.
 - Báo cáo Sale/Marketing, chống filter IDOR, công thức doanh thu, hoàn/hủy, bộ lọc và owner snapshot.

@@ -14,6 +14,7 @@ class CallHistory extends Model
         'user_id',
         'result',
         'note',
+        'marketing_feedback',
         'callback_at',
     ];
 
