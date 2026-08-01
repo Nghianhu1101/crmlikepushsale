@@ -171,10 +171,10 @@ Lệnh đã chạy:
 
 Kết quả:
 
-- **43 test pass**
-- **262 assertion pass**
+- **44 test pass**
+- **268 assertion pass**
 - **0 fail**
-- Thời gian PHPUnit/Pest báo cáo ở lần kiểm tra gần nhất: `4.94s`.
+- Thời gian PHPUnit/Pest báo cáo ở lần kiểm tra gần nhất: `5.08s`.
 
 Các nhóm pass:
 
@@ -191,6 +191,7 @@ Các nhóm pass:
 - Báo cáo Sale/Marketing, chống filter IDOR, công thức doanh thu, hoàn/hủy, bộ lọc và owner snapshot.
 - Demo seeder chạy lặp không xóa cấu hình riêng, không ghi đè Person và không tạo trùng Person/Lead.
 - Seeder nghiệm thu tạo đúng bốn tài khoản, đăng nhập được, cấu hình hai sale nhận data và phân hai Lead liên tiếp theo round-robin kèm notification.
+- Tài khoản Marketing mở được form phone-first và tạo data sau khi ACL bổ sung quyền `leads.create.quick-create` theo ánh xạ route thực tế của Krayin.
 - Menu workflow hiển thị đúng theo Admin, Marketing, Sale và Trưởng nhóm; các mục chưa có backend không sinh URL.
 
 Chưa được kiểm thử:

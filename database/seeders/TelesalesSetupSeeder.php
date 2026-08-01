@@ -56,6 +56,7 @@ class TelesalesSetupSeeder extends Seeder
                 'dashboard',
                 'leads',
                 'leads.create',
+                'leads.create.quick-create',
                 'leads.view',
             ],
             'Sale' => [
@@ -68,6 +69,7 @@ class TelesalesSetupSeeder extends Seeder
                 'dashboard',
                 'leads',
                 'leads.create',
+                'leads.create.quick-create',
                 'leads.view',
                 'leads.edit',
             ],

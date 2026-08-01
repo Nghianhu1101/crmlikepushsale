@@ -104,4 +104,4 @@ Các mục trên cố ý bị khóa bằng nhãn `Chưa có`. Chúng không đư
 - HTTP xác nhận thanh trên và menu theo vai trò trên server nền.
 - Playwright xác nhận desktop rộng `1440px` và mobile rộng `390px` không gây
   cuộn ngang; drawer mobile mở được, mục chưa có không sinh link.
-- Toàn bộ PHP test: `43 passed`, `262 assertions`, `0 failed`.
+- Toàn bộ PHP test: `44 passed`, `268 assertions`, `0 failed`.

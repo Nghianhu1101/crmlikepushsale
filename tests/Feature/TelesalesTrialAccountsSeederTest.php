@@ -4,6 +4,7 @@ use Database\Seeders\TelesalesTrialAccountsSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Webkul\Contact\Models\Person;
+use Webkul\Lead\Models\Lead;
 use Webkul\Telesales\Models\GroupMember;
 use Webkul\Telesales\Models\LeadMeta;
 use Webkul\Telesales\Models\Notification;
@@ -60,6 +61,40 @@ it('creates repeatable trial accounts with the expected roles and sale group', f
         ->toBeTruthy()
         ->and(TelesalesGroup::query()->where('is_default', true)->count())
         ->toBe(1);
+
+    expect($users->get('marketing.demo@localhost.test')->role->permissions)
+        ->toContain('leads.create', 'leads.create.quick-create');
+});
+
+it('allows the marketing trial account to open the form and create phone-first data', function () {
+    $this->seed(TelesalesTrialAccountsSeeder::class);
+
+    $marketing = User::query()
+        ->where('email', 'marketing.demo@localhost.test')
+        ->firstOrFail();
+    $phone = '097'.random_int(1000000, 9999999);
+
+    $this->actingAs($marketing, 'user')
+        ->get(route('admin.leads.create'))
+        ->assertSuccessful()
+        ->assertSee('Số điện thoại');
+
+    $this->actingAs($marketing, 'user')
+        ->post(route('admin.leads.store'), [
+            'person' => [
+                'contact_numbers' => [['value' => $phone]],
+            ],
+        ])
+        ->assertRedirect();
+
+    $person = Person::query()->where('normalized_phone', $phone)->firstOrFail();
+    $lead = Lead::query()->where('person_id', $person->id)->firstOrFail();
+
+    expect(LeadMeta::query()
+        ->where('lead_id', $lead->id)
+        ->where('created_by', $marketing->id)
+        ->where('marketing_owner_id', $marketing->id)
+        ->exists())->toBeTrue();
 });
 
 it('allows every active trial account to log in', function () {
