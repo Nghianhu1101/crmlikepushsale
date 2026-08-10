@@ -63,7 +63,7 @@ class IncomingLeadController extends Controller
             'message' => $result['status'] === 'unassigned'
                 ? 'Data đã tạo nhưng chưa có nhân sự nhận.'
                 : ($result['customer_type'] === 'old'
-                    ? 'Khách hàng cũ đã được chuyển cho bộ phận CSKH.'
+                    ? 'Khách hàng cũ đã được nhận diện và phân cho Sale.'
                     : 'Data đã được tạo và phân sale.'),
             'data' => [
                 'lead_id' => $result['lead']->id,
@@ -72,7 +72,7 @@ class IncomingLeadController extends Controller
                 'stage' => $result['lead']->stage->name,
                 'source_connection' => $connection?->name,
                 'customer_type' => $result['customer_type'],
-                'assigned_department' => $result['customer_type'] === 'old' ? 'customer_care' : 'sales',
+                'assigned_department' => 'sales',
             ],
         ], 201);
     }

@@ -13,7 +13,6 @@ use Webkul\Lead\Models\Product as LeadProduct;
 use Webkul\Lead\Models\Source;
 use Webkul\Lead\Models\Stage;
 use Webkul\Telesales\Models\Assignment;
-use Webkul\Telesales\Models\CustomerCareCase;
 use Webkul\Telesales\Models\GroupMember;
 use Webkul\Telesales\Models\LeadMeta;
 use Webkul\Telesales\Models\MarketingMapping;
@@ -27,8 +26,7 @@ class IncomingLeadService
     public function __construct(
         protected PhoneNormalizer $phoneNormalizer,
         protected AttributeValueRepository $attributeValueRepository,
-        protected CustomerProfileService $customerProfileService,
-        protected CustomerCareService $customerCareService
+        protected CustomerProfileService $customerProfileService
     ) {}
 
     /**
@@ -66,20 +64,6 @@ class IncomingLeadService
                         return $this->duplicateResult($leadId, 'phone', $person->id);
                     }
 
-                    $activeCareCase = CustomerCareCase::query()
-                        ->where('person_id', $person->id)
-                        ->whereIn('status', ['pending', 'contacted', 'callback'])
-                        ->latest('id')
-                        ->first();
-
-                    if ($activeCareCase) {
-                        return $this->duplicateResult(
-                            $activeCareCase->lead_id ?: $person->leads()->latest()->value('id'),
-                            'active_customer_care',
-                            $person->id
-                        );
-                    }
-
                     $customerType = 'old';
                 }
 
@@ -89,18 +73,12 @@ class IncomingLeadService
                     $source?->id,
                     $createdBy
                 );
-                $lastSalesOwnerId = $profile?->last_sales_owner_id;
-
-                if ($customerType === 'new') {
-                    [$groupId, $ownerId, $warning] = $this->allocate(
-                        $input['group_id'] ?? null,
-                        $source?->id,
-                        $input['campaign'] ?? null,
-                        $createdBy
-                    );
-                } else {
-                    [$groupId, $ownerId, $warning] = [null, null, null];
-                }
+                [$groupId, $ownerId, $warning] = $this->allocate(
+                    $input['group_id'] ?? null,
+                    $source?->id,
+                    $input['campaign'] ?? null,
+                    $createdBy
+                );
 
                 $pipeline = Pipeline::query()->where('is_default', true)->first()
                     ?: Pipeline::query()->firstOrFail();
@@ -169,7 +147,7 @@ class IncomingLeadService
 
                 $this->saveAttributeValues('leads', $lead->id, $leadData);
 
-                $meta = LeadMeta::query()->create([
+                LeadMeta::query()->create([
                     'lead_id' => $lead->id,
                     'external_id' => $input['external_id'] ?? null,
                     'marketing_external_id' => $input['marketing_external_id'] ?? null,
@@ -181,46 +159,13 @@ class IncomingLeadService
                     'assigned_user_id' => $ownerId,
                     'created_by' => $createdBy,
                     'marketing_owner_id' => $marketingOwnerId,
-                    'sales_owner_id' => $customerType === 'old' ? $lastSalesOwnerId : $ownerId,
+                    'sales_owner_id' => $ownerId,
                     'marketing_group_id' => $marketingGroupId,
                     'incoming_source_id' => $input['incoming_source_id'] ?? null,
                     'customer_type' => $customerType,
                     'data_received_at' => now(),
                     'assigned_at' => $ownerId ? now() : null,
                 ]);
-
-                if ($customerType === 'old') {
-                    $careResult = $this->customerCareService->open($person, [
-                        'lead_id' => $lead->id,
-                        'marketing_owner_id' => $marketingOwnerId,
-                        'sales_owner_id' => $lastSalesOwnerId,
-                        'case_type' => 'returning_data',
-                        'product_interest' => $productInterest ?: null,
-                        'message' => $input['message'] ?? null,
-                        'data_received_at' => now(),
-                    ]);
-                    $careCase = $careResult['case'];
-                    $groupId = $careCase->group_id;
-                    $ownerId = $careCase->care_owner_id;
-                    $warning = $careResult['warning'];
-                    $stageCode = $ownerId ? 'new' : 'unassigned';
-                    $stage = Stage::query()
-                        ->where('lead_pipeline_id', $pipeline->id)
-                        ->where('code', $stageCode)
-                        ->first() ?: $stage;
-                    $lead->update([
-                        'user_id' => $ownerId,
-                        'lead_pipeline_stage_id' => $stage->id,
-                    ]);
-                    $meta->update([
-                        'allocation_status' => $ownerId ? 'assigned' : 'unassigned',
-                        'assigned_user_id' => $ownerId,
-                        'customer_care_owner_id' => $ownerId,
-                        'customer_care_group_id' => $groupId,
-                        'customer_care_case_id' => $careCase->id,
-                        'assigned_at' => $ownerId ? now() : null,
-                    ]);
-                }
 
                 Assignment::query()->create([
                     'lead_id' => $lead->id,
@@ -230,11 +175,13 @@ class IncomingLeadService
                     'assigned_at' => now(),
                 ]);
 
-                if ($ownerId && $customerType === 'new') {
+                if ($ownerId) {
                     Notification::query()->create([
                         'user_id' => $ownerId,
                         'lead_id' => $lead->id,
-                        'title' => 'Data mới được giao',
+                        'title' => $customerType === 'old'
+                            ? 'Khách hàng cũ được giao'
+                            : 'Data mới được giao',
                         'body' => implode(' · ', array_filter([
                             $name,
                             $phone,
@@ -247,9 +194,9 @@ class IncomingLeadService
                 $this->customerProfileService->recordIncomingLead(
                     $lead,
                     $marketingOwnerId,
-                    $customerType === 'old' ? $lastSalesOwnerId : $ownerId,
+                    $ownerId,
                     $customerType,
-                    $customerType === 'old' ? $ownerId : null
+                    null
                 );
 
                 return [

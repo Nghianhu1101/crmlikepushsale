@@ -23,7 +23,8 @@ class LeadOwnershipObserver
             return;
         }
 
-        $isCustomerCareLead = $meta->customer_type === 'old';
+        $isCustomerCareLead = $meta->customer_care_case_id !== null
+            && $meta->customer_care_owner_id !== null;
         $ownerColumn = $isCustomerCareLead ? 'customer_care_owner_id' : 'sales_owner_id';
 
         if ((int) $meta->{$ownerColumn} === (int) $newOwnerId) {

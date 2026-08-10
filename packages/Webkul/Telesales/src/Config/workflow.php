@@ -12,7 +12,7 @@ return [
             'roles' => ['admin'],
             'children' => [
                 ['label' => 'Tổng quan đơn vị', 'route' => 'admin.dashboard.index'],
-                ['label' => 'Nhân sự', 'route' => 'admin.settings.users.index'],
+                ['label' => 'Nhân sự & tài khoản', 'route' => 'admin.telesales.accounts.index'],
                 ['label' => 'Nhóm làm việc', 'route' => 'admin.settings.groups.index'],
                 ['label' => 'Vai trò & phân quyền', 'route' => 'admin.settings.roles.index'],
                 ['label' => 'Cấu hình hệ thống', 'route' => 'admin.configuration.index'],

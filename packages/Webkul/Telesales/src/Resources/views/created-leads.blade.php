@@ -189,7 +189,6 @@
                             $order = $record->latestOrder;
                             $orderItems = $order?->items ?? collect();
                             $isOldCustomer = $record->customer_type === 'old';
-                            $careHistory = $record->careCase?->latestHistory;
                         @endphp
 
                         <tr>
@@ -205,13 +204,19 @@
                                 </a>
                                 <div class="mt-2 font-medium">{{ $displayPhone ?: 'Chưa có số' }}</div>
                                 @if ($isOldCustomer)
-                                    <div class="mt-2 inline-flex rounded-full bg-orange-100 px-2 py-1 text-xs font-bold text-orange-700">Khách hàng cũ · chuyển CSKH</div>
+                                    <div
+                                        class="mt-2 inline-flex text-xl leading-none text-red-500"
+                                        data-customer-type="old"
+                                        role="img"
+                                        aria-label="Khách hàng cũ"
+                                        title="Khách hàng cũ"
+                                    >♥</div>
                                 @endif
                                 @if ($role === 'marketing')
                                     <div class="mt-1 text-xs text-gray-500">Số được ẩn theo quyền Marketing</div>
                                 @endif
 
-                                @if ($isSaleProfile && ! $isOldCustomer && $phone)
+                                @if ($isSaleProfile && $phone)
                                     <div class="mt-3 flex flex-wrap gap-2">
                                         <a href="tel:{{ $phone }}" class="inline-flex items-center gap-1 rounded-md bg-green-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-green-700">
                                             <span class="icon-call" aria-hidden="true"></span>
@@ -231,19 +236,14 @@
                             </td>
 
                             <td>
-                                <div class="font-semibold">{{ $isOldCustomer ? ($record->careOwner?->name ?: 'Chưa phân CSKH') : ($record->salesOwner?->name ?: 'Chưa phân bổ') }}</div>
-                                @if ($isOldCustomer)<div class="mt-1 text-xs font-semibold text-orange-600">Bộ phận CSKH</div>@endif
+                                <div class="font-semibold">{{ $record->salesOwner?->name ?: 'Chưa phân bổ' }}</div>
                                 <div class="mt-2 text-xs text-gray-500">
                                     {{ $record->assigned_at?->format('d/m/Y H:i') ?: 'Chưa có thời điểm nhận' }}
                                 </div>
                             </td>
 
                             <td>
-                                @if ($isOldCustomer && $careHistory)
-                                    <div class="font-semibold">{{ $careHistory->user?->name }}</div>
-                                    <div class="mt-1">{{ config('telesales.call_results.'.$careHistory->result, $careHistory->result) }}</div>
-                                    <div class="mt-2 text-xs text-gray-500">{{ $careHistory->created_at->format('d/m/Y H:i') }}</div>
-                                @elseif ($history)
+                                @if ($history)
                                     <div class="font-semibold">{{ $history->user?->name }}</div>
                                     <div class="mt-1">{{ config('telesales.call_results.'.$history->result, $history->result) }}</div>
                                     <div class="mt-2 text-xs text-gray-500">{{ $history->created_at->format('d/m/Y H:i') }}</div>
@@ -253,11 +253,7 @@
                             </td>
 
                             <td>
-                                @if ($isOldCustomer && $careHistory)
-                                    <div class="font-semibold text-orange-700 dark:text-orange-300">{{ config('telesales.call_results.'.$careHistory->result, $careHistory->result) }}</div>
-                                    <div class="marketing-profile-message mt-2 text-orange-600 dark:text-orange-300">{{ $careHistory->marketing_feedback ?: 'CSKH chưa gửi phản hồi cho Marketing.' }}</div>
-                                    @if ($careHistory->callback_at)<div class="mt-2 text-xs font-medium text-brandColor">Hẹn gọi: {{ $careHistory->callback_at->format('d/m/Y H:i') }}</div>@endif
-                                @elseif ($history)
+                                @if ($history)
                                     <div class="font-semibold text-blue-700 dark:text-blue-300">
                                         {{ config('telesales.call_results.'.$history->result, $history->result) }}
                                     </div>

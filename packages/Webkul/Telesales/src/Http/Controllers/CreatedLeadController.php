@@ -49,8 +49,7 @@ class CreatedLeadController extends Controller
                     });
             });
         } elseif ($role === 'sale') {
-            $query->where('sales_owner_id', $user->id)
-                ->where('customer_type', 'new');
+            $query->where('sales_owner_id', $user->id);
         }
 
         $this->applyFilters($query, $filters);

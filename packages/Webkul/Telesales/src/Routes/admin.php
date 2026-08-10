@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Webkul\Telesales\Http\Controllers\AccountController;
 use Webkul\Telesales\Http\Controllers\CreatedLeadController;
 use Webkul\Telesales\Http\Controllers\CustomerCareCampaignController;
 use Webkul\Telesales\Http\Controllers\CustomerCareCaseController;
@@ -13,6 +14,12 @@ use Webkul\Telesales\Http\Controllers\OutcomeController;
 use Webkul\Telesales\Http\Controllers\OwnershipController;
 use Webkul\Telesales\Http\Controllers\RankingController;
 use Webkul\Telesales\Http\Controllers\SourceConnectionController;
+
+Route::get('accounts', [AccountController::class, 'index'])
+    ->name('admin.telesales.accounts.index');
+
+Route::post('accounts', [AccountController::class, 'store'])
+    ->name('admin.telesales.accounts.store');
 
 Route::get('rankings', [RankingController::class, 'index'])
     ->name('admin.telesales.rankings.index');

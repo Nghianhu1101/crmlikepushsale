@@ -28,9 +28,20 @@
         <div class="space-y-2 text-sm dark:text-white">
             <h2 class="text-lg font-semibold">{{ $lead->person?->name }}</h2>
 
-            @if ($customerProfile?->customer_status === 'old')
-                <div class="inline-flex rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700">Khách hàng cũ</div>
-                <p><span class="font-medium">CSKH phụ trách:</span> {{ $meta?->careOwner?->name ?: $customerProfile?->careOwner?->name ?: 'Chưa phân bổ' }}</p>
+            @if ($meta?->customer_type === 'old' || $customerProfile?->customer_status === 'old')
+                <div
+                    class="inline-flex items-center gap-2 text-sm font-bold text-red-500"
+                    data-customer-type="old"
+                    aria-label="Khách hàng cũ"
+                    title="Khách hàng cũ"
+                >
+                    <span class="text-xl leading-none" role="img" aria-hidden="true">♥</span>
+                    Khách hàng cũ
+                </div>
+
+                @if ($meta?->customer_care_case_id)
+                    <p><span class="font-medium">CSKH phụ trách:</span> {{ $meta?->careOwner?->name ?: 'Chưa phân bổ' }}</p>
+                @endif
             @endif
 
             <p>

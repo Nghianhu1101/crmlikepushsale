@@ -94,14 +94,16 @@ it('turns a successful buyer into an old customer and assigns the separate care 
         ->assertDontSee($scenario['phone']);
 });
 
-it('routes returning data to customer care while preserving the marketing owner and person', function () {
+it('marks returning marketing data as an old customer and still assigns it to sale', function () {
     $scenario = createCustomer360Scenario();
+    $returningSale = customer360User('sale2.demo@localhost.test');
     $firstCase = CustomerCareCase::query()->where('person_id', $scenario['incoming']['person']->id)->firstOrFail();
     app(CustomerCareService::class)->recordResult($firstCase, [
         'result' => 'no_demand',
         'note' => 'Hoàn thành chăm sóc sau bán lần đầu.',
     ], $scenario['care']->id);
     $personCount = Person::query()->count();
+    $careCaseCount = CustomerCareCase::query()->where('person_id', $scenario['incoming']['person']->id)->count();
 
     $returning = app(IncomingLeadService::class)->create([
         'phone' => '+84'.substr($scenario['phone'], 1),
@@ -119,24 +121,34 @@ it('routes returning data to customer care while preserving the marketing owner 
         ->and($returning['person']->id)->toBe($scenario['incoming']['person']->id)
         ->and($meta->customer_type)->toBe('old')
         ->and($meta->marketing_owner_id)->toBe($scenario['marketing']->id)
-        ->and($meta->sales_owner_id)->toBe($scenario['sale']->id)
-        ->and($meta->customer_care_owner_id)->toBe($scenario['care']->id)
-        ->and($returning['lead']->user_id)->toBe($scenario['care']->id);
+        ->and($meta->sales_owner_id)->toBe($returningSale->id)
+        ->and($meta->customer_care_owner_id)->toBeNull()
+        ->and($meta->customer_care_case_id)->toBeNull()
+        ->and($returning['lead']->user_id)->toBe($returningSale->id)
+        ->and(CustomerCareCase::query()->where('person_id', $scenario['incoming']['person']->id)->count())->toBe($careCaseCount)
+        ->and(Notification::query()
+            ->where('lead_id', $returning['lead']->id)
+            ->where('user_id', $returningSale->id)
+            ->where('title', 'Khách hàng cũ được giao')
+            ->exists())->toBeTrue();
 
     $maskedPhone = substr($scenario['phone'], 0, 4).'***'.substr($scenario['phone'], -3);
     $this->actingAs($scenario['marketing'], 'user')
         ->get(route('admin.telesales.created-leads.index'))
         ->assertSuccessful()
-        ->assertSee('Khách hàng cũ · chuyển CSKH')
-        ->assertSee('CSKH Demo')
+        ->assertSee('aria-label="Khách hàng cũ"', false)
+        ->assertSee($returningSale->name)
         ->assertSee($maskedPhone)
         ->assertDontSee($scenario['phone']);
 
-    $this->actingAs($scenario['care'], 'user')
-        ->get(route('admin.telesales.customer-care.cases.index'))
+    $this->actingAs($returningSale, 'user')
+        ->get(route('admin.telesales.created-leads.index'))
         ->assertSuccessful()
+        ->assertSee('aria-label="Khách hàng cũ"', false)
         ->assertSee('Khách Customer 360')
-        ->assertSee($scenario['phone']);
+        ->assertSee($scenario['phone'])
+        ->assertSee('Gọi ngay')
+        ->assertSee('Tác nghiệp');
 });
 
 it('stores immutable care history, callback notification and a repeat order', function () {
