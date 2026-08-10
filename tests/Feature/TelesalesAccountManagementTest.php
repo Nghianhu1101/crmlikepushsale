@@ -17,6 +17,13 @@ beforeEach(function () {
         ->firstOrFail();
 });
 
+it('keeps admin outside every automatic data allocation queue', function () {
+    expect(GroupMember::query()
+        ->where('user_id', $this->admin->id)
+        ->where('receives_data', true)
+        ->exists())->toBeFalse();
+});
+
 it('shows admin every operational role on the account management page', function () {
     $this->actingAs($this->admin, 'user')
         ->get(route('admin.telesales.accounts.index'))

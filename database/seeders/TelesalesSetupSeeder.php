@@ -35,9 +35,9 @@ class TelesalesSetupSeeder extends Seeder
         if ($admin) {
             $group->users()->syncWithoutDetaching([$admin->id]);
 
-            GroupMember::query()->firstOrCreate(
+            GroupMember::query()->updateOrCreate(
                 ['group_id' => $group->id, 'user_id' => $admin->id],
-                ['receives_data' => true, 'position' => 1]
+                ['receives_data' => false, 'position' => 1]
             );
         }
 
@@ -58,9 +58,9 @@ class TelesalesSetupSeeder extends Seeder
 
         if ($admin) {
             $careGroup->users()->syncWithoutDetaching([$admin->id]);
-            GroupMember::query()->firstOrCreate(
+            GroupMember::query()->updateOrCreate(
                 ['group_id' => $careGroup->id, 'user_id' => $admin->id],
-                ['receives_data' => true, 'position' => 1]
+                ['receives_data' => false, 'position' => 1]
             );
         }
 
