@@ -26,7 +26,12 @@ it('shows admin every operational role on the account management page', function
         ->assertSee('Marketing')
         ->assertSee('Sale')
         ->assertSee('Trưởng nhóm sale')
-        ->assertSee('Chăm sóc khách hàng');
+        ->assertSee('Chăm sóc khách hàng')
+        ->assertSee('data-telesales-account-manager', false)
+        ->assertSee('data-role-select', false)
+        ->assertSee('data-group-select', false)
+        ->assertDontSee('x-data=', false)
+        ->assertDontSee(':disabled="department()', false);
 });
 
 it('lets admin create accounts for every role with the correct department access', function () {

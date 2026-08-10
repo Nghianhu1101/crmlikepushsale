@@ -2,9 +2,6 @@
     <x-slot:title>Quản lý tài khoản theo vai trò</x-slot>
 
     @php
-        $groupDepartments = $groups->mapWithKeys(fn ($configuration) => [
-            $configuration->group_id => $configuration->department,
-        ]);
         $categoryLabels = [
             'admin' => 'Quản trị toàn hệ thống',
             'marketing' => 'Nhập data và theo dõi nguồn',
@@ -17,18 +14,7 @@
 
     <div
         class="flex flex-col gap-4"
-        x-data='{
-            selectedRole: @js((string) old("role_id", "")),
-            categories: @js($roleCategories),
-            groupDepartments: @js($groupDepartments),
-            category() { return this.categories[this.selectedRole] || null },
-            department() {
-                if (["sale", "leader"].includes(this.category())) return "sales";
-                if (this.category() === "customer_care") return "customer_care";
-                return null;
-            },
-            needsGroup() { return this.department() !== null }
-        }'
+        data-telesales-account-manager
     >
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <div class="flex flex-wrap items-center justify-between gap-3">
@@ -45,9 +31,9 @@
                     @php($category = $roleCategories[$role->id])
                     <button
                         type="button"
-                        class="rounded-lg border p-4 text-left transition hover:border-blue-500 hover:bg-blue-50 dark:border-gray-700 dark:hover:bg-blue-950"
-                        :class="selectedRole === '{{ $role->id }}' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-100 dark:bg-blue-950' : 'border-gray-200'"
-                        @click="selectedRole = '{{ $role->id }}'; document.getElementById('account-form').scrollIntoView({ behavior: 'smooth' })"
+                        class="rounded-lg border border-gray-200 p-4 text-left transition hover:border-blue-500 hover:bg-blue-50 dark:border-gray-700 dark:hover:bg-blue-950"
+                        data-role-card
+                        data-role-id="{{ $role->id }}"
                     >
                         <div class="font-semibold text-gray-900 dark:text-white">{{ $role->name }}</div>
                         <div class="mt-1 text-xs text-gray-500">{{ $categoryLabels[$category] ?? $role->description }}</div>
@@ -93,10 +79,16 @@
 
                 <label class="grid gap-1 text-sm text-gray-700 dark:text-gray-200">
                     <span>Vai trò <b class="text-red-500">*</b></span>
-                    <select name="role_id" x-model="selectedRole" required class="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-950">
+                    <select name="role_id" data-role-select required class="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-950">
                         <option value="">Chọn vai trò</option>
                         @foreach ($roles as $role)
-                            <option value="{{ $role->id }}">{{ $role->name }}</option>
+                            <option
+                                value="{{ $role->id }}"
+                                data-role-category="{{ $roleCategories[$role->id] }}"
+                                @selected((string) old('role_id') === (string) $role->id)
+                            >
+                                {{ $role->name }}
+                            </option>
                         @endforeach
                     </select>
                 </label>
@@ -111,15 +103,15 @@
                     <input type="password" name="password_confirmation" required minlength="8" autocomplete="new-password" class="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-950">
                 </label>
 
-                <label class="grid gap-1 text-sm text-gray-700 dark:text-gray-200" x-show="needsGroup()" x-cloak>
+                <label class="grid gap-1 text-sm text-gray-700 dark:text-gray-200" data-group-field hidden>
                     <span>Nhóm làm việc</span>
-                    <select name="group_id" class="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-950">
+                    <select name="group_id" data-group-select class="rounded-md border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-950">
                         <option value="">Dùng nhóm mặc định</option>
                         @foreach ($groups as $configuration)
                             <option
                                 value="{{ $configuration->group_id }}"
+                                data-department="{{ $configuration->department }}"
                                 @selected((int) old('group_id') === $configuration->group_id)
-                                :disabled="department() !== '{{ $configuration->department }}'"
                             >
                                 {{ $configuration->group->name }} · {{ $configuration->department === 'sales' ? 'Sale' : 'CSKH' }}{{ $configuration->is_default ? ' · Mặc định' : '' }}
                             </option>
@@ -135,14 +127,14 @@
                     Kích hoạt tài khoản ngay
                 </label>
 
-                <label class="flex items-center gap-2" x-show="needsGroup()" x-cloak>
+                <label class="flex items-center gap-2" data-group-field hidden>
                     <input type="hidden" name="receives_data" value="0">
                     <input type="checkbox" name="receives_data" value="1" @checked(old('receives_data', '1') === '1')>
                     Được nhận data tự động
                 </label>
 
-                <span class="text-gray-500" x-show="category() === 'marketing'">Marketing được nhập data nhưng không tham gia vòng chia Sale.</span>
-                <span class="text-gray-500" x-show="category() === 'admin'">Quản trị viên có quyền truy cập toàn hệ thống.</span>
+                <span class="text-gray-500" data-role-help="marketing" hidden>Marketing được nhập data nhưng không tham gia vòng chia Sale.</span>
+                <span class="text-gray-500" data-role-help="admin" hidden>Quản trị viên có quyền truy cập toàn hệ thống.</span>
             </div>
 
             <div class="mt-5 flex justify-end">
@@ -197,4 +189,90 @@
             <div class="p-4">{{ $accounts->links() }}</div>
         </div>
     </div>
+
+    @pushOnce('scripts')
+        <script>
+            (() => {
+                const initializeAccountManagers = () => {
+                    document.querySelectorAll('[data-telesales-account-manager]').forEach((manager) => {
+                        if (manager.dataset.initialized === 'true') {
+                            return;
+                        }
+
+                        manager.dataset.initialized = 'true';
+
+                        const roleSelect = manager.querySelector('[data-role-select]');
+                        const groupSelect = manager.querySelector('[data-group-select]');
+                        const roleCards = manager.querySelectorAll('[data-role-card]');
+                        const groupFields = manager.querySelectorAll('[data-group-field]');
+                        const roleHelpMessages = manager.querySelectorAll('[data-role-help]');
+
+                        const selectedCategory = () => roleSelect.selectedOptions[0]?.dataset.roleCategory || null;
+
+                        const selectedDepartment = () => {
+                            const category = selectedCategory();
+
+                            if (['sale', 'leader'].includes(category)) {
+                                return 'sales';
+                            }
+
+                            return category === 'customer_care' ? 'customer_care' : null;
+                        };
+
+                        const updateForm = () => {
+                            const category = selectedCategory();
+                            const department = selectedDepartment();
+
+                            roleCards.forEach((card) => {
+                                const isSelected = card.dataset.roleId === roleSelect.value;
+
+                                card.classList.toggle('border-blue-500', isSelected);
+                                card.classList.toggle('bg-blue-50', isSelected);
+                                card.classList.toggle('ring-2', isSelected);
+                                card.classList.toggle('ring-blue-100', isSelected);
+                                card.classList.toggle('dark:bg-blue-950', isSelected);
+                                card.classList.toggle('border-gray-200', ! isSelected);
+                            });
+
+                            groupFields.forEach((field) => field.hidden = department === null);
+                            roleHelpMessages.forEach((message) => {
+                                message.hidden = message.dataset.roleHelp !== category;
+                            });
+
+                            if (! groupSelect) {
+                                return;
+                            }
+
+                            Array.from(groupSelect.options).forEach((option) => {
+                                option.disabled = Boolean(option.value) && option.dataset.department !== department;
+                            });
+
+                            if (groupSelect.selectedOptions[0]?.disabled) {
+                                groupSelect.value = '';
+                            }
+                        };
+
+                        roleCards.forEach((card) => {
+                            card.addEventListener('click', () => {
+                                roleSelect.value = card.dataset.roleId;
+                                updateForm();
+                                document.getElementById('account-form')?.scrollIntoView({ behavior: 'smooth' });
+                            });
+                        });
+
+                        roleSelect.addEventListener('change', updateForm);
+                        updateForm();
+                    });
+                };
+
+                const bootAccountManagers = () => window.setTimeout(initializeAccountManagers, 0);
+
+                if (document.readyState === 'complete') {
+                    bootAccountManagers();
+                } else {
+                    window.addEventListener('load', bootAccountManagers, { once: true });
+                }
+            })();
+        </script>
+    @endPushOnce
 </x-admin::layouts>
