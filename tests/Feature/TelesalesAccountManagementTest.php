@@ -3,6 +3,7 @@
 use Database\Seeders\TelesalesSetupSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
+use Webkul\Product\Models\Product;
 use Webkul\Telesales\Models\GroupMember;
 use Webkul\Telesales\Models\TelesalesGroup;
 use Webkul\User\Models\Role;
@@ -22,6 +23,22 @@ it('keeps admin outside every automatic data allocation queue', function () {
         ->where('user_id', $this->admin->id)
         ->where('receives_data', true)
         ->exists())->toBeFalse();
+});
+
+it('seeds the telesales product catalog', function () {
+    $expectedProducts = [
+        'CTML' => 'Cao tuân mạch linh',
+        'CTML-HALF' => '1/2 cao tuân mạch linh',
+        'NTP' => 'Nhân tâm phúc',
+        'NTP-HALF' => '1/2 nhân tâm phúc',
+    ];
+
+    expect(Product::query()->whereIn('sku', array_keys($expectedProducts))->count())
+        ->toBe(count($expectedProducts));
+
+    foreach ($expectedProducts as $sku => $name) {
+        expect(Product::query()->where('sku', $sku)->value('name'))->toBe($name);
+    }
 });
 
 it('shows admin every operational role on the account management page', function () {

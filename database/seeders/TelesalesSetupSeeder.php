@@ -3,7 +3,10 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Webkul\Attribute\Repositories\AttributeValueRepository;
 use Webkul\Lead\Models\Source;
+use Webkul\Product\Models\Product;
+use Webkul\Product\Repositories\ProductRepository;
 use Webkul\Telesales\Models\GroupMember;
 use Webkul\Telesales\Models\TelesalesGroup;
 use Webkul\User\Models\Group;
@@ -17,6 +20,8 @@ class TelesalesSetupSeeder extends Seeder
         foreach (['Nhập trực tiếp', 'Website', 'Facebook', 'Messenger'] as $name) {
             Source::query()->firstOrCreate(['name' => $name]);
         }
+
+        $this->createProducts();
 
         $this->createRoles();
 
@@ -73,6 +78,43 @@ class TelesalesSetupSeeder extends Seeder
             ['group_id' => $careGroup->id],
             ['department' => 'customer_care', 'is_default' => ! $hasDefaultCareGroup]
         );
+    }
+
+    private function createProducts(): void
+    {
+        $products = [
+            'CTML' => 'Cao tuân mạch linh',
+            'CTML-HALF' => '1/2 cao tuân mạch linh',
+            'NTP' => 'Nhân tâm phúc',
+            'NTP-HALF' => '1/2 nhân tâm phúc',
+        ];
+
+        $productRepository = app(ProductRepository::class);
+        $attributeValueRepository = app(AttributeValueRepository::class);
+
+        foreach ($products as $sku => $name) {
+            $data = [
+                'entity_type' => 'products',
+                'sku' => $sku,
+                'name' => $name,
+                'description' => 'Sản phẩm mặc định cho quy trình telesale.',
+                'quantity' => 0,
+                'price' => 0,
+            ];
+            $product = Product::query()->where('sku', $sku)->first();
+
+            if (! $product) {
+                $productRepository->create($data);
+
+                continue;
+            }
+
+            if ($product->attribute_values()->doesntExist()) {
+                $attributeValueRepository->save(array_merge($data, [
+                    'entity_id' => $product->id,
+                ]));
+            }
+        }
     }
 
     private function createRoles(): void
